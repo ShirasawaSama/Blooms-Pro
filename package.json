@@ -1,0 +1,63 @@
+{
+  "name": "blooms-pro",
+  "version": "1.0.0",
+  "description": "Easily create glow effects in Photoshop.",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "eslint .",
+    "start": "parcel watch src/index.html --no-hmr --public-url .",
+    "build": "parcel build src/index.html --public-url ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShirasawaSama/Blooms-Pro.git"
+  },
+  "keywords": [
+    "blooms",
+    "glow",
+    "photoshop",
+    "uxp"
+  ],
+  "author": "Shirasawa",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/ShirasawaSama/Blooms-Pro/issues"
+  },
+  "browserslist": "chrome >= 90",
+  "alias": {
+    "photoshop": {
+      "global": "window.require('photoshop')"
+    },
+    "uxp": {
+      "global": "window.require('uxp')"
+    }
+  },
+  "targets": {
+    "main": false
+  },
+  "homepage": "https://github.com/ShirasawaSama/Blooms-Pro#readme",
+  "devDependencies": {
+    "@parcel/transformer-less": "^2.9.2",
+    "@types/photoshop": "^24.5.1",
+    "@types/react": "^18.2.12",
+    "@types/react-dom": "^18.2.5",
+    "@typescript-eslint/eslint-plugin": "^5.59.11",
+    "@typescript-eslint/parser": "^5.59.11",
+    "eslint": "^8.42.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-config-standard-jsx": "^11.0.0",
+    "eslint-config-standard-react": "^13.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^16.0.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.32.2",
+    "parcel": "^2.9.2",
+    "parcel-reporter-static-files-copy": "^1.5.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "5.0"
+  }
+}
