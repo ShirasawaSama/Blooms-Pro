@@ -433,7 +433,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     await exposure(coreGlow, brightness)
   }
   if (colorize) {
-    await updateHue(hue, saturation, lightness, glowParametersName, glowType)
+    await updateHue(hue, saturation, lightness - 100, glowParametersName, glowType)
   }
   setActiveLayer(bloomsProGlow)
   await batchPlay([{ _obj: 'mergeLayersNew' }], {})
@@ -632,16 +632,16 @@ export async function apply (isCancel = false) {
       await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
       app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && (it.blendMode = constants.BlendMode.SCREEN))
     }
-    await togglePalettes()
+    // await togglePalettes()
   }, 'BloomsPro - Apply')
-  setTimeout(setFullScreenMode, 50, false)
+  // setTimeout(setFullScreenMode, 50, false)
   if (error) throw error
 }
 
 export async function generate () {
   let error: Error | null = null
-  await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
-  await setFullScreenMode(true)
+  // await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
+  // await setFullScreenMode(true)
   await app.activeDocument.suspendHistory(async () => {
     try {
       await setPerformanceMode()
@@ -649,7 +649,7 @@ export async function generate () {
       await fitToScreen()
       await generateGlow({ layerName })
       await focusPluginPanel()
-      await toggleColorPanel()
+      // await toggleColorPanel()
     } catch (e: any) {
       console.error(e)
       error = e

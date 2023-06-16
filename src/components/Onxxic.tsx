@@ -13,7 +13,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   if (!options) return <div />
 
   let s = options.saturation / 100
-  const v = options.brightness / 100
+  const v = options.lightness / 100
 
   const l = (2 - s) * v / 2
 
@@ -138,7 +138,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             className='picker'
             onClick={() => {
               const color = app.foregroundColor.hsb
-              regenerate({ ...options, hue: color.hue, saturation: color.saturation, brightness: color.brightness })
+              regenerate({ ...options, hue: color.hue, saturation: color.saturation, lightness: color.brightness })
             }}
             style={{ backgroundColor: `hsl(${options.hue}, ${s * 100}%, ${l * 100}%)` }}
           />
@@ -151,7 +151,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
               const color = app.foregroundColor.rgb
               if (color.red || color.green || color.blue) {
                 const color = app.foregroundColor.hsb
-                regenerate({ ...options, hue: color.hue, saturation: color.saturation, brightness: color.brightness, colorize: true })
+                regenerate({ ...options, hue: color.hue, saturation: color.saturation, lightness: color.brightness, colorize: true })
                 return
               }
             }
