@@ -12,7 +12,8 @@ export default {
       rotation: 'Rotation',
       postBlur: 'Post Blur'
     },
-    colorize: ''
+    colorize: '',
+    showRange: 'Show Range'
   },
   intensity: 'Intensity',
   size: 'Size',

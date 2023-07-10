@@ -14,7 +14,8 @@ const lang: typeof langType = {
       rotation: '光线角度',
       postBlur: '后期模糊'
     },
-    colorize: '光着色'
+    colorize: '光着色',
+    showRange: '显示采样范围'
   },
   intensity: '强度',
   size: '大小',

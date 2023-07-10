@@ -7,6 +7,7 @@ const Checkbox: React.FC<{
   checked?: boolean
   class?: string
   children?: React.ReactNode
+  id?: string
 }> = ({ label, onChange, checked, ...props }) => {
   const ref = React.useRef<any>(null)
   useLayoutEffect(() => {

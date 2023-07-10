@@ -222,6 +222,7 @@ export interface GlowOptions {
   detail: number
   chromaticAberration: number
   layerName: string
+  algorithm: 'o'
 }
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
   let { intensity, size, threshold, angle, glowType, range, colorize, hue, saturation, lightness, brightness, rayNumber, detail, chromaticAberration, layerName } = Object.assign({
@@ -325,7 +326,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     saturation: saturation | 0,
     size,
     threshold,
-    layerName
+    layerName,
+    algorithm: 'o'
   })
   const brightnessLevel = 254 - brightness
   app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
@@ -595,6 +597,8 @@ async function generateBloomsProElement () {
   return name
 }
 
+export const getRangeLayer = () => app.activeDocument.layers.find(it => it.name === 'BloomsPro_Grp')?.layers?.find(it => it.name === 'BloomsPro_Range')
+
 // function changeLayerColor() {
 //   var idsetd = charIDToTypeID('setd');
 //   var desc15992 = new ActionDescriptor();
@@ -662,7 +666,9 @@ export async function generate () {
 
 export const getCurrentOptions = () => {
   try {
-    return JSON.parse(app.activeDocument.layers.getByName('BloomsPro_Grp')!.layers![1].name) as GlowOptions
+    const json = JSON.parse(app.activeDocument.layers.getByName('BloomsPro_Grp')!.layers![1].name) as GlowOptions
+    if (json.algorithm !== 'o') return null
+    return json
   } catch { }
   return null
 }

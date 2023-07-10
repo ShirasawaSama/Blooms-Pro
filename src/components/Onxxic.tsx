@@ -3,9 +3,9 @@ import Picker from './Picker'
 import Slider from './Slider'
 import Checkbox from './Checkbox'
 import lang from '../locales'
-import { app } from 'photoshop'
+import { app, core } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
-import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply } from '../algorithms/onxxic'
+import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer } from '../algorithms/onxxic'
 
 const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   const [time, setTime] = React.useContext(TimeCostContext)
@@ -129,7 +129,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
       <div className='bottom'>
         <sp-detail>{(time / 1000).toFixed(2)}{lang.second}</sp-detail>
         <div>
-          <sp-button variant='secondary' onClick={() => apply(true)} class='cancel'>{lang.cancel}</sp-button>
+          <sp-button variant='secondary' onClick={() => apply(true)} class='cancel' style={{ marginRight: 8 }}>{lang.cancel}</sp-button>
           <sp-button onClick={() => apply()}>{lang.apply}</sp-button>
         </div>
       </div>
@@ -161,6 +161,22 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         >{lang.o.colorize}
         </Checkbox>
       </div>
+      <Checkbox
+        class='checkbox'
+        id='show-range'
+        checked={getRangeLayer()?.visible}
+        onChange={(...args) => {
+          const layer = getRangeLayer()
+          if (!layer) return
+          core.executeAsModal(async () => {
+            layer.visible = !layer.visible
+            const elm = document.getElementById('show-range') as any
+            if (!elm) return
+            elm.checked = layer.visible
+          }, { commandName: 'Show Range' })
+        }}
+      >{lang.o.showRange}
+      </Checkbox>
     </div>
   )
 }
