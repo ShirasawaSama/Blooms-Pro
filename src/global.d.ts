@@ -18,6 +18,10 @@ declare global {
       'sp-detail': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> & { size?: string }
     }
   }
+
+  declare interface Window {
+    require (module: string): any
+  }
 }
 
 declare module '@adobe/xd-plugin-toolkit' {

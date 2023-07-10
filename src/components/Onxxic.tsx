@@ -2,6 +2,7 @@ import React from 'react'
 import Picker from './Picker'
 import Slider from './Slider'
 import Checkbox from './Checkbox'
+import lang from '../locales'
 import { app } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
 import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply } from '../algorithms/onxxic'
@@ -51,20 +52,20 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
     <div className='onxxic'>
       <div className='type'>
         <Picker
-          placeholder='Mode'
-          label='Mode'
+          placeholder={lang.mode}
+          label={lang.mode}
           size='S'
           value={+(options.glowType === 'glare')}
           onChange={val => regenerate({ ...options, glowType: val ? 'glare' : 'bloom' })}
           class='mode'
         >
-          <sp-menu-item> Bloom </sp-menu-item>
-          <sp-menu-item> Glare </sp-menu-item>
+          <sp-menu-item> {lang.o.types.bloom} </sp-menu-item>
+          <sp-menu-item> {lang.o.types.glare} </sp-menu-item>
         </Picker>
         {options.glowType === 'glare' && (
           <Picker
-            placeholder='Ray Number'
-            label='Ray Number'
+            placeholder={lang.o.rayCount}
+            label={lang.o.rayCount}
             size='S'
             class='ray-number'
             value={+(options.rayNumber === 4)}
@@ -79,31 +80,31 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
       <Slider
         value={options.intensity}
         value-label='%'
-        label='Intensity'
+        label={lang.intensity}
         onChange={val => regenerate({ ...options, intensity: val })}
       />
       <Slider
         value={options.size}
         step={0.1}
-        label='Size'
+        label={lang.size}
         onChange={val => regenerate({ ...options, size: val })}
       />
       <Slider
         value={options.threshold * 100 | 0}
         value-label='%'
-        label='Threshold'
+        label={lang.threshold}
         onChange={val => regenerate({ ...options, threshold: val / 100 })}
       />
       <Slider
         value={options.brightness}
         max={255}
-        label='Brightness'
+        label={lang.brightness}
         onChange={val => regenerate({ ...options, brightness: val })}
       />
       <Slider
         value={options.chromaticAberration}
         value-label='%'
-        label='Chromatic Aberration'
+        label={lang.chromaticAberration}
         onChange={val => regenerate({ ...options, chromaticAberration: val })}
       />
       {options.glowType === 'glare' && (
@@ -114,22 +115,22 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             max={90}
             min={-90}
             value-label='°'
-            label='Rotation'
+            label={lang.o.glare.rotation}
             onChange={val => regenerate({ ...options, angle: val })}
           />
           <Slider
             value={options.detail}
             value-label='%'
-            label='Post Blur'
+            label={lang.o.glare.postBlur}
             onChange={val => regenerate({ ...options, detail: val })}
           />
         </>
       )}
       <div className='bottom'>
-        <sp-detail>{(time / 1000).toFixed(2)}s</sp-detail>
+        <sp-detail>{(time / 1000).toFixed(2)}{lang.second}</sp-detail>
         <div>
-          <sp-button variant='secondary' onClick={() => apply(true)} class='cancel'>Cancel</sp-button>
-          <sp-button onClick={() => apply()}>Apply</sp-button>
+          <sp-button variant='secondary' onClick={() => apply(true)} class='cancel'>{lang.cancel}</sp-button>
+          <sp-button onClick={() => apply()}>{lang.apply}</sp-button>
         </div>
       </div>
       <div className='colorize'>
@@ -157,7 +158,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             }
             regenerate({ ...options, colorize })
           }}
-        >Colorize
+        >{lang.o.colorize}
         </Checkbox>
       </div>
     </div>

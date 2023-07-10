@@ -4,7 +4,7 @@
 // import { ActionList } from '../am-to-uxp/ActionList'
 import photoshop, { core } from 'photoshop'
 import type { Layer } from 'photoshop/dom/Layer'
-import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel } from '../utils'
+import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from '../utils'
 
 const getStringFromID: (str: number) => string = (photoshop.action as any).getStringFromID
 function charIDToTypeID (charID: string): number {
@@ -632,16 +632,18 @@ export async function apply (isCancel = false) {
       await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
       app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && (it.blendMode = constants.BlendMode.SCREEN))
     }
-    // await togglePalettes()
+    if (!isDarwin) await togglePalettes()
   }, 'BloomsPro - Apply')
-  // setTimeout(setFullScreenMode, 50, false)
+  if (!isDarwin) setTimeout(setFullScreenMode, 50, false)
   if (error) throw error
 }
 
 export async function generate () {
   let error: Error | null = null
-  // await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
-  // await setFullScreenMode(true)
+  if (!isDarwin) {
+    await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
+    await setFullScreenMode(true)
+  }
   await app.activeDocument.suspendHistory(async () => {
     try {
       await setPerformanceMode()
@@ -649,7 +651,7 @@ export async function generate () {
       await fitToScreen()
       await generateGlow({ layerName })
       await focusPluginPanel()
-      // await toggleColorPanel()
+      if (!isDarwin) await toggleColorPanel()
     } catch (e: any) {
       console.error(e)
       error = e

@@ -1,6 +1,8 @@
 import { action, core } from 'photoshop'
 import { createContext } from 'react'
-const fs = require('uxp').storage.localFileSystem
+const fs = window.require('uxp').storage.localFileSystem
+
+export const isDarwin = window.require('os').platform() === 'darwin'
 
 export async function prompt (
   heading: string,

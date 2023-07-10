@@ -1,6 +1,7 @@
 import React from 'react'
 import { error, TimeCostContext } from '../utils'
 import { generate } from '../algorithms/onxxic'
+import lang from '../locales'
 
 const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   const [, setTime] = React.useContext(TimeCostContext)
@@ -18,12 +19,12 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
           }
           refresh()
         }}
-      >BLOOM!
+      >{lang.bloom}
       </sp-button>
       <sp-checkbox
         checked={localStorage.getItem('oMode') === 'true' || undefined}
         onClick={(e: any) => localStorage.setItem('oMode', e.target.checked.toString())}
-      >O Mode
+      >O {lang.mode}
       </sp-checkbox>
     </div>
   )

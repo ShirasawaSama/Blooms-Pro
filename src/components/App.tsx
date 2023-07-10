@@ -6,6 +6,7 @@ import Onxxic from './Onxxic'
 import photoshop from 'photoshop'
 import { TimeCostContext } from '../utils'
 import type { Document } from 'photoshop/dom/Document'
+import lang from '../locales'
 
 const events = ['layersFiltered', 'close', 'hostFocusChanged']
 const App: React.FC = () => {
@@ -33,7 +34,7 @@ const App: React.FC = () => {
       <sp-body size='S' class='github'>Blooms Pro By:&nbsp;
         <a
           href='https://github.com/ShirasawaSama/Blooms-Pro'
-          onClick={() => uxp.shell.openExternal('https://github.com/ShirasawaSama/Blooms-Pro', 'Thanks for your star!')}
+          onClick={() => uxp.shell.openExternal('https://github.com/ShirasawaSama/Blooms-Pro', lang.thanksForStar)}
         >Shirasawa
         </a>
       </sp-body>
