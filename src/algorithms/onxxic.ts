@@ -218,14 +218,14 @@ export interface GlowOptions {
   saturation: number
   lightness: number
   brightness: number
-  rayNumber: 2 | 4
+  times: number
   detail: number
   chromaticAberration: number
   layerName: string
-  algorithm: 'o'
+  sameBlur: boolean
 }
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
-  let { intensity, size, threshold, angle, glowType, range, colorize, hue, saturation, lightness, brightness, rayNumber, detail, chromaticAberration, layerName } = Object.assign({
+  let { intensity, size, threshold, angle, glowType, range, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur } = Object.assign({
     angle: 0,
     brightness: 0,
     chromaticAberration: 0,
@@ -236,11 +236,12 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     hue: 0,
     intensity: 100,
     lightness: 0,
-    rayNumber: 2,
+    times: 4,
     saturation: 80,
     size: 20,
     threshold: 0.25,
-    layerName: ''
+    layerName: '',
+    sameBlur: false
   }, options || {})
   async function blurLayer (layer: Layer) {
     if (glowType === 'bloom') {
@@ -271,7 +272,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
       }
       let secondGlare: Layer | undefined
       let secondGlareAngle = 0
-      if (rayNumber === 4) {
+      if (times === 4) {
         secondGlare = (await layer.duplicate())!
         secondGlare.fillOpacity = intensity
         secondGlareAngle = angle + 90
@@ -284,7 +285,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
       const motionBlurAmount = 10
       for (let o = 0; o < motionBlurAmount; o++) {
         await motionBlur(layer, -angle, size * scale)
-        if (rayNumber === 4) {
+        if (times === 4) {
           await motionBlur(secondGlare!, secondGlareAngle, size * scale)
           if (brightnessLevel > 0) {
             await levels(secondGlare!, 200 + (brightnessLevel * 0.21568627450980393))
@@ -322,12 +323,12 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     hue: hue | 0,
     intensity,
     lightness: lightness | 0,
-    rayNumber: rayNumber | 0,
+    times: times | 0,
     saturation: saturation | 0,
     size,
     threshold,
     layerName,
-    algorithm: 'o'
+    sameBlur
   })
   const brightnessLevel = 254 - brightness
   app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
@@ -416,27 +417,19 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   await createRedAlert()
   outherGlow.fillOpacity = intensity
   setActiveLayer(outherGlow)
-  await batchPlay(new Array(5).fill({ _obj: 'copyToLayer' }), {})
-  if (glowType === 'bloom') {
-    await blurLayer(outherGlow)
-    coreGlow.fillOpacity = intensity
-  } else if (glowType === 'glare') {
-    await blurLayer(outherGlow)
+  await blurLayer(outherGlow)
+  if (sameBlur) {
+    await gaussianBlur(outherGlow, size * scale2 * 4)
+    await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
+    if (glowType === 'bloom') coreGlow.fillOpacity = intensity
+  } else {
+    await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
+    if (glowType === 'bloom') coreGlow.fillOpacity = intensity
+    for (let i = 1; i <= times; i++) await gaussianBlur(doc.layers[2]!.layers![1 + i], size * scale2 * (2 ** i))
   }
-  await gaussianBlur(doc.layers[2]!.layers![5], size * scale2 * 2)
-  await gaussianBlur(doc.layers[2]!.layers![4], size * scale2 * 4)
-  await gaussianBlur(doc.layers[2]!.layers![3], size * scale2 * 8)
-  await gaussianBlur(doc.layers[2]!.layers![2], size * scale2 * 16)
-  await gaussianBlur(doc.layers[2]!.layers![1], size * scale2 * 32)
-  if (glowType !== 'bloom') {
-    await motionBlur(coreGlow, -angle, size * scale, 2)
-  }
-  if (brightness > 0) {
-    await exposure(coreGlow, brightness)
-  }
-  if (colorize) {
-    await updateHue(hue, saturation, lightness - 100, glowParametersName, glowType)
-  }
+  if (glowType !== 'bloom') await motionBlur(coreGlow, -angle, size * scale, 2)
+  if (brightness > 0) await exposure(coreGlow, brightness)
+  if (colorize) await updateHue(hue, saturation, lightness - 100, glowParametersName, glowType)
   setActiveLayer(bloomsProGlow)
   await batchPlay([{ _obj: 'mergeLayersNew' }], {})
   bloomsProGlow.blendMode = constants.BlendMode.SCREEN
@@ -648,16 +641,24 @@ export async function generate () {
     await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
     await setFullScreenMode(true)
   }
+  let layerName: string
   await app.activeDocument.suspendHistory(async () => {
     try {
       await setPerformanceMode()
-      const layerName = await generateBloomsProElement()
+      layerName = await generateBloomsProElement()
       await fitToScreen()
+    } catch (e: any) {
+      console.error(e)
+      error = e
+    }
+  }, 'BloomsPro - Create')
+  if (error) return error
+  await app.activeDocument.suspendHistory(async () => {
+    try {
       await generateGlow({ layerName })
       await focusPluginPanel()
       if (!isDarwin) await toggleColorPanel()
     } catch (e: any) {
-      console.error(e)
       error = e
     }
   }, 'BloomsPro - Create')
@@ -666,9 +667,7 @@ export async function generate () {
 
 export const getCurrentOptions = () => {
   try {
-    const json = JSON.parse(app.activeDocument.layers.getByName('BloomsPro_Grp')!.layers![1].name) as GlowOptions
-    if (json.algorithm !== 'o') return null
-    return json
+    return JSON.parse(app.activeDocument.layers.getByName('BloomsPro_Grp')!.layers![1].name) as GlowOptions
   } catch { }
   return null
 }

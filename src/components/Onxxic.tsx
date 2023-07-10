@@ -7,6 +7,9 @@ import { app, core } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
 import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer } from '../algorithms/onxxic'
 
+const glareTimes = [2, 4]
+const bloomTimes = [1, 2, 3, 4, 5, 6, 7, 8]
+
 const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   const [time, setTime] = React.useContext(TimeCostContext)
   const options = getCurrentOptions()
@@ -62,19 +65,16 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
           <sp-menu-item> {lang.o.types.bloom} </sp-menu-item>
           <sp-menu-item> {lang.o.types.glare} </sp-menu-item>
         </Picker>
-        {options.glowType === 'glare' && (
-          <Picker
-            placeholder={lang.o.rayCount}
-            label={lang.o.rayCount}
-            size='S'
-            class='ray-number'
-            value={+(options.rayNumber === 4)}
-            onChange={val => regenerate({ ...options, rayNumber: val ? 4 : 2 })}
-          >
-            <sp-menu-item> 2 </sp-menu-item>
-            <sp-menu-item> 4 </sp-menu-item>
-          </Picker>
-        )}
+        <Picker
+          placeholder={options.glowType === 'glare' ? lang.o.glare.rayCount : lang.o.blurTimes}
+          label={options.glowType === 'glare' ? lang.o.glare.rayCount : lang.o.blurTimes}
+          size='S'
+          class='ray-number'
+          value={options.glowType === 'glare' ? +(options.times === 4) : options.times - 1}
+          onChange={val => regenerate({ ...options, times: options.glowType === 'glare' ? (val ? 4 : 2) : val + 1 })}
+        >
+          {(options.glowType === 'glare' ? glareTimes : bloomTimes).map(i => <sp-menu-item key={i}>{i}</sp-menu-item>)}
+        </Picker>
       </div>
       <sp-divider />
       <Slider
@@ -134,16 +134,6 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         </div>
       </div>
       <div className='colorize'>
-        {options.colorize && (
-          <div
-            className='picker'
-            onClick={() => {
-              const color = app.foregroundColor.hsb
-              regenerate({ ...options, hue: color.hue, saturation: color.saturation, lightness: color.brightness })
-            }}
-            style={{ backgroundColor: `hsl(${options.hue}, ${s * 100}%, ${l * 100}%)` }}
-          />
-        )}
         <Checkbox
           class='checkbox'
           checked={options.colorize}
@@ -160,12 +150,28 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
           }}
         >{lang.o.colorize}
         </Checkbox>
+        {options.colorize && (
+          <div
+            className='picker'
+            onClick={() => {
+              const color = app.foregroundColor.hsb
+              regenerate({ ...options, hue: color.hue, saturation: color.saturation, lightness: color.brightness })
+            }}
+            style={{ backgroundColor: `hsl(${options.hue}, ${s * 100}%, ${l * 100}%)` }}
+          />
+        )}
       </div>
+      <Checkbox
+        class='checkbox'
+        checked={options.sameBlur}
+        onChange={sameBlur => regenerate({ ...options, sameBlur })}
+      >{lang.o.sameBlur}
+      </Checkbox>
       <Checkbox
         class='checkbox'
         id='show-range'
         checked={getRangeLayer()?.visible}
-        onChange={(...args) => {
+        onChange={() => {
           const layer = getRangeLayer()
           if (!layer) return
           core.executeAsModal(async () => {

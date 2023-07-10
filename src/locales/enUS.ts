@@ -3,17 +3,19 @@ export default {
   bloom: 'BLOOM!',
   mode: 'Mode',
   o: {
-    rayCount: 'Ray Count',
     types: {
       bloom: 'Bloom',
       glare: 'glare'
     },
     glare: {
       rotation: 'Rotation',
-      postBlur: 'Post Blur'
+      postBlur: 'Post Blur',
+      rayCount: 'Ray Count'
     },
     colorize: '',
-    showRange: 'Show Range'
+    showRange: 'Show Range',
+    sameBlur: 'Same Blur',
+    blurTimes: 'Blur Times'
   },
   intensity: 'Intensity',
   size: 'Size',
