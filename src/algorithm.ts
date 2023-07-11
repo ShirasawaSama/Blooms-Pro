@@ -4,34 +4,12 @@
 // import { ActionList } from '../am-to-uxp/ActionList'
 import photoshop, { core } from 'photoshop'
 import type { Layer } from 'photoshop/dom/Layer'
-import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from '../utils'
+import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from './utils'
 
 const getStringFromID: (str: number) => string = (photoshop.action as any).getStringFromID
 function charIDToTypeID (charID: string): number {
   return (charID.charCodeAt(0) * 0x1000000) + ((charID.charCodeAt(1) << 16) | (charID.charCodeAt(2) << 8) | charID.charCodeAt(3))
 }
-
-// 参数名: 翻译
-// intensity: 强度
-// size: 大小
-// threshold: 阈值
-// angle: 角度
-// glowType: 光晕类型
-// range: 范围
-// colorize: 着色
-// hue: 色调
-// saturation: 饱和度
-// lightness: 亮度
-// brightness: 明亮度
-// rayNumber: 光线数量
-// appliedGlow: 应用光晕
-// useMask: 使用蒙版
-// detail: 细节
-// docWidth: 文档宽度
-// docHeight: 文档高度
-// docResolution: 文档分辨率
-// userDocument: 用户文档
-// chromaticAberration: 色差
 
 const { app, constants, action: { batchPlay } } = photoshop
 // photoshop.action.addNotificationListener(['all'], console.log)
@@ -123,7 +101,7 @@ async function updateHue (h: number, s: number, l: number, layerName: string, gl
   const bloomsProLayers = app.activeDocument.layers.getByName(layerName).layers!
   const hueParsed = h
   let newHueValue = h
-  for (let i = glowType === 'bloom' ? 1 : 2; i < bloomsProLayers.length; i++) {
+  for (let i = glowType !== 'glare' ? 1 : 2; i < bloomsProLayers.length; i++) {
     if (hueParsed < 50) {
       newHueValue += 2
     } else if ((hueParsed > 50) && (h < 128)) {
@@ -211,7 +189,7 @@ export interface GlowOptions {
   size: number
   threshold: number
   angle: number
-  glowType: 'bloom' | 'glare'
+  glowType: 'bloom' | 'bloom-o' | 'glare'
   range: boolean
   colorize: boolean
   hue: number
@@ -244,22 +222,15 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     sameBlur: false
   }, options || {})
   async function blurLayer (layer: Layer) {
-    if (glowType === 'bloom') {
-      await gaussianBlur(layer, size * scale)
-    } else {
+    if (glowType === 'glare') {
       if (detail > 0) {
         if (appliedGlow) {
-          if (docWidth > docHeight) {
-            doc.resizeImage(1500, undefined, docResolution, constants.ResampleMethod.BILINEAR, 0)
-          } else {
-            doc.resizeImage(undefined, 1200, docResolution, constants.ResampleMethod.BILINEAR, 0)
-          }
+          if (docWidth > docHeight) await doc.resizeImage(1500, undefined, docResolution, constants.ResampleMethod.BILINEAR, 0)
+          else await doc.resizeImage(undefined, 1200, docResolution, constants.ResampleMethod.BILINEAR, 0)
         }
         setActiveLayer(layer)
         await batchPlay([{ _obj: 'ripple', amount: (detail * 10) - 1, rippleSize: { _enum: 'rippleSize', _value: 'large' } }], {})
-        if (appliedGlow) {
-          doc.resizeImage(docWidth, docHeight, docResolution, constants.ResampleMethod.BILINEAR, 0)
-        }
+        if (appliedGlow) await doc.resizeImage(docWidth, docHeight, docResolution, constants.ResampleMethod.BILINEAR, 0)
         docH = doc.height
         docW = doc.width
         docSize = Math.max(docH, docW)
@@ -276,30 +247,21 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
         secondGlare = (await layer.duplicate())!
         secondGlare.fillOpacity = intensity
         secondGlareAngle = angle + 90
-        if (secondGlareAngle > 90) {
-          secondGlareAngle = -(-180 + secondGlareAngle)
-        } else {
-          secondGlareAngle = -(90 + angle)
-        }
+        secondGlareAngle = secondGlareAngle > 90 ? -(-180 + secondGlareAngle) : -(90 + angle)
       }
       const motionBlurAmount = 10
       for (let o = 0; o < motionBlurAmount; o++) {
         await motionBlur(layer, -angle, size * scale)
         if (times === 4) {
           await motionBlur(secondGlare!, secondGlareAngle, size * scale)
-          if (brightnessLevel > 0) {
-            await levels(secondGlare!, 200 + (brightnessLevel * 0.21568627450980393))
-          }
+          if (brightnessLevel > 0) await levels(secondGlare!, 200 + (brightnessLevel * 0.21568627450980393))
         }
-        if (brightnessLevel > 0) {
-          await levels(layer, 200 + (brightnessLevel * 0.21568627450980393))
-        }
+        if (brightnessLevel > 0) await levels(layer, 200 + (brightnessLevel * 0.21568627450980393))
       }
-    }
+    } else await gaussianBlur(layer, size * scale)
   }
-  if (brightness > 253) {
-    brightness -= 3
-  }
+
+  if (brightness > 253) brightness -= 3
   const doc = app.activeDocument
   const bloomsProSourceLayer = doc.layers.getByName('BloomsPro_SourceLayer')
   if (app.activeDocument.activeLayers.length !== 1 || app.activeDocument.activeLayers[0] !== bloomsProSourceLayer) {
@@ -311,7 +273,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     console.error('Please select \'BloomsPro_SourceLayer\' to enable the engine')
     return
   }
-  // const bloomsProDocument = app.activeDocument
+
   const glowParametersName = JSON.stringify({
     angle: angle | 0,
     brightness: brightness | 0,
@@ -340,14 +302,11 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   let docSize = Math.max(docH, docW)
   let scale = 1
   let scale2 = 1
-  if (glowType === 'bloom') {
-    scale = scale2 = docSize / 5000
-  } else {
+  if (glowType === 'glare') {
     scale = docSize / 400
     scale2 = docSize / 12000
-  }
+  } else scale = scale2 = docSize / 5000
   const scale3 = docSize / 1500
-  // const blurLevel = scale * 5
 
   let bloomsProGrp: Layer
   let bloomsProGlow: Layer
@@ -358,7 +317,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     if (doc.layers[0].name === 'MaskLayer') deleteLayer(doc.layers[0])
     if (doc.layers[0].name === 'BloomsPro_Grp') deleteLayer(doc.layers[0])
     setActiveLayer(tmpLayer)
-    // tmpLayer.allLocked = false
+
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
     bloomsProGlow = (await doc.createLayerGroup({ name: glowParametersName }))!
     bloomsProGlow.move(bloomsProGrp, constants.ElementPlacement.PLACEAFTER)
@@ -375,7 +334,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
       }
     }
     setActiveLayer(tmpLayer)
-    // tmpLayer.allLocked = false
+
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
     bloomsProGlow = (await doc.createLayerGroup({ name: glowParametersName }))!
     bloomsProGlow.move(bloomsProGrp, constants.ElementPlacement.PLACEAFTER)
@@ -389,9 +348,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     ;[luminosityMask, outherGlow] = doc.layers[1]!.layers!
   }
 
-  if (appliedGlow) {
-    app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.SIXTEEN
-  }
+  if (appliedGlow) app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.SIXTEEN
   await levelsB(outherGlow, threshold)
   await levelsB(luminosityMask, threshold)
   luminosityMask.blendMode = constants.BlendMode.MULTIPLY
@@ -407,9 +364,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   await exposure(coreGlow, brightness)
   coreGlow.blendMode = constants.BlendMode.COLORDODGE
   await blackAndWhite(coreGlow)
-  if (brightness > 0) {
-    await exposure(outherGlow, brightness)
-  }
+  if (brightness > 0) await exposure(outherGlow, brightness)
   rangeLayer.blendMode = constants.BlendMode.NORMAL
   rangeLayer.name = 'BloomsPro_Range'
   rangeLayer.fillOpacity = 100
@@ -421,13 +376,13 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   if (sameBlur) {
     await gaussianBlur(outherGlow, size * scale2 * 4)
     await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
-    if (glowType === 'bloom') coreGlow.fillOpacity = intensity
+    if (glowType !== 'glare') coreGlow.fillOpacity = intensity
   } else {
     await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
-    if (glowType === 'bloom') coreGlow.fillOpacity = intensity
+    if (glowType !== 'glare') coreGlow.fillOpacity = intensity
     for (let i = 1; i <= times; i++) await gaussianBlur(doc.layers[2]!.layers![1 + i], size * scale2 * (2 ** i))
   }
-  if (glowType !== 'bloom') await motionBlur(coreGlow, -angle, size * scale, 2)
+  if (glowType === 'glare') await motionBlur(coreGlow, -angle, size * scale, 2)
   if (brightness > 0) await exposure(coreGlow, brightness)
   if (colorize) await updateHue(hue, saturation, lightness - 100, glowParametersName, glowType)
   setActiveLayer(bloomsProGlow)
@@ -592,26 +547,6 @@ async function generateBloomsProElement () {
 
 export const getRangeLayer = () => app.activeDocument.layers.find(it => it.name === 'BloomsPro_Grp')?.layers?.find(it => it.name === 'BloomsPro_Range')
 
-// function changeLayerColor() {
-//   var idsetd = charIDToTypeID('setd');
-//   var desc15992 = new ActionDescriptor();
-//   var idnull = charIDToTypeID('null');
-//   var ref10069 = new ActionReference();
-//   var idLyr = charIDToTypeID('Lyr ');
-//   var idOrdn = charIDToTypeID('Ordn');
-//   var idTrgt = charIDToTypeID('Trgt');
-//   ref10069.putEnumerated(idLyr, idOrdn, idTrgt);
-//   desc15992.putReference(idnull, ref10069);
-//   var idT = charIDToTypeID('T   ');
-//   var desc15993 = new ActionDescriptor();
-//   var idClr = charIDToTypeID('Clr ');
-//   var idClr = charIDToTypeID('Clr ');
-//   var idBl = charIDToTypeID('Bl  ');
-//   desc15993.putEnumerated(idClr, idClr, idBl);
-//   var idLyr = charIDToTypeID('Lyr ');
-//   desc15992.putObject(idT, idLyr, desc15993);
-//   executeAction(idsetd, desc15992, DialogModes.NO);
-// }
 export async function apply (isCancel = false) {
   let error: Error | undefined
   const options = getCurrentOptions()
@@ -674,12 +609,14 @@ export const getCurrentOptions = () => {
 
 export const regenerate = async (options: GlowOptions) => {
   let error: Error | undefined
-  await app.activeDocument.suspendHistory(async () => {
+  await core.executeAsModal(async () => {
+  // await app.activeDocument.suspendHistory(async () => {
     try {
       await generateGlow(options)
     } catch (e: any) {
       error = e
     }
-  }, 'BloomsPro - Regenerate')
+  }, { commandName: 'BloomsPro - Regenerate' })
+  // }, 'BloomsPro - Regenerate')
   if (error) throw error
 }

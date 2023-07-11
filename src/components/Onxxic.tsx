@@ -5,7 +5,7 @@ import Checkbox from './Checkbox'
 import lang from '../locales'
 import { app, core } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
-import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer } from '../algorithms/onxxic'
+import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer } from '../algorithm'
 
 const glareTimes = [2, 4]
 const bloomTimes = [1, 2, 3, 4, 5, 6, 7, 8]

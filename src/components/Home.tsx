@@ -1,6 +1,6 @@
 import React from 'react'
 import { error, TimeCostContext } from '../utils'
-import { generate } from '../algorithms/onxxic'
+import { generate } from '../algorithm'
 import lang from '../locales'
 
 const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
