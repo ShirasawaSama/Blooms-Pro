@@ -4,21 +4,21 @@ const lang: typeof langType = {
   thanksForStar: '感谢您的Star!',
   bloom: '绽放!',
   mode: '模式',
-  o: {
-    types: {
-      bloom: '泛光',
-      glare: '眩光 (线条光)'
-    },
-    glare: {
-      rotation: '光线角度',
-      postBlur: '后期模糊',
-      rayCount: '光线数量'
-    },
-    colorize: '光着色',
-    showRange: '显示采样范围',
-    sameBlur: '每层模糊都相同',
-    blurTimes: '模糊次数'
+  types: {
+    bloomSoft: '泛光 (柔光)',
+    bloom: '泛光',
+    glare: '眩光 (线条光)'
   },
+  glare: {
+    rotation: '光线角度',
+    postBlur: '后期模糊',
+    rayCount: '光线数量'
+  },
+  colorize: '光着色',
+  showRange: '显示采样范围',
+  sameBlur: '每层模糊都相同',
+  linearBlur: '线性模糊',
+  blurTimes: '模糊次数',
   intensity: '强度',
   size: '大小',
   threshold: '阈值',
@@ -26,7 +26,9 @@ const lang: typeof langType = {
   chromaticAberration: '色散',
   cancel: '取消',
   apply: '应用',
-  second: '秒'
+  second: '秒',
+  enableMask: '启用蒙版',
+  originalImage: '原始图像'
 }
 
 export default lang

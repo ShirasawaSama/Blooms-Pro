@@ -9,22 +9,22 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
     <div className='home'>
       <sp-button
         onClick={async () => {
+          const oldTime = Date.now()
           try {
-            const oldTime = Date.now()
-            if (localStorage.getItem('oMode') === 'true') await generate()
-            setTime(Date.now() - oldTime)
+            await generate()
           } catch (e: any) {
             console.error(e)
             error(e.message)
           }
+          setTime(Date.now() - oldTime)
           refresh()
         }}
       >{lang.bloom}
       </sp-button>
       <sp-checkbox
-        checked={localStorage.getItem('oMode') === 'true' || undefined}
-        onClick={(e: any) => localStorage.setItem('oMode', e.target.checked.toString())}
-      >O {lang.mode}
+        checked={localStorage.getItem('enableMask') === 'true' || undefined}
+        onClick={(e: any) => localStorage.setItem('enableMask', e.target.checked.toString())}
+      >{lang.enableMask}
       </sp-checkbox>
     </div>
   )

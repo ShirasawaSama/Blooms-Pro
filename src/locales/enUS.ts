@@ -2,21 +2,21 @@ export default {
   thanksForStar: 'Thanks for your star!',
   bloom: 'BLOOM!',
   mode: 'Mode',
-  o: {
-    types: {
-      bloom: 'Bloom',
-      glare: 'glare'
-    },
-    glare: {
-      rotation: 'Rotation',
-      postBlur: 'Post Blur',
-      rayCount: 'Ray Count'
-    },
-    colorize: '',
-    showRange: 'Show Range',
-    sameBlur: 'Same Blur',
-    blurTimes: 'Blur Times'
+  types: {
+    bloomSoft: 'Bloom (Soft Light)',
+    bloom: 'Bloom',
+    glare: 'Glare'
   },
+  glare: {
+    rotation: 'Rotation',
+    postBlur: 'Post Blur',
+    rayCount: 'Ray Count'
+  },
+  colorize: '',
+  showRange: 'Show Range',
+  sameBlur: 'Same Blur',
+  linearBlur: 'Linear Blur',
+  blurTimes: 'Blur Times',
   intensity: 'Intensity',
   size: 'Size',
   threshold: 'Threshold',
@@ -24,5 +24,7 @@ export default {
   chromaticAberration: 'Chromatic Aberration',
   cancel: 'Cancel',
   apply: 'Apply',
-  second: 's'
+  second: 's',
+  enableMask: 'Enable Mask',
+  originalImage: 'Original Image'
 }

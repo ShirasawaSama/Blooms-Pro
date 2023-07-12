@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 // @ts-ignore
 import uxp from 'uxp'
 import Home from './Home'
-import Onxxic from './Onxxic'
+import Options from './Options'
 import photoshop from 'photoshop'
 import { TimeCostContext } from '../utils'
 import type { Document } from 'photoshop/dom/Document'
@@ -39,7 +39,7 @@ const App: React.FC = () => {
         </a>
       </sp-body>
       <TimeCostContext.Provider value={[obj[0], obj[1]]}>
-        {mode === 2 ? <Onxxic key={currentDocument?.id} refresh={refresh} /> : <Home refresh={refresh} />}
+        {mode === 2 ? <Options key={currentDocument?.id} refresh={refresh} /> : <Home refresh={refresh} />}
       </TimeCostContext.Provider>
     </>
   )

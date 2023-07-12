@@ -189,7 +189,7 @@ export interface GlowOptions {
   size: number
   threshold: number
   angle: number
-  glowType: 'bloom' | 'bloom-o' | 'glare'
+  glowType: 'bloom-soft' | 'bloom' | 'glare'
   range: boolean
   colorize: boolean
   hue: number
@@ -201,16 +201,16 @@ export interface GlowOptions {
   chromaticAberration: number
   layerName: string
   sameBlur: boolean
+  linearBlur: boolean
 }
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
-  let { intensity, size, threshold, angle, glowType, range, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur } = Object.assign({
+  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur } = Object.assign({
     angle: 0,
     brightness: 0,
     chromaticAberration: 0,
     colorize: false,
     detail: 0,
-    glowType: 'bloom',
-    range: false,
+    glowType: 'bloom-soft',
     hue: 0,
     intensity: 100,
     lightness: 0,
@@ -219,46 +219,45 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     size: 20,
     threshold: 0.25,
     layerName: '',
-    sameBlur: false
+    sameBlur: false,
+    linearBlur: false
   }, options || {})
-  async function blurLayer (layer: Layer) {
-    if (glowType === 'glare') {
-      if (detail > 0) {
-        if (appliedGlow) {
-          if (docWidth > docHeight) await doc.resizeImage(1500, undefined, docResolution, constants.ResampleMethod.BILINEAR, 0)
-          else await doc.resizeImage(undefined, 1200, docResolution, constants.ResampleMethod.BILINEAR, 0)
-        }
-        setActiveLayer(layer)
-        await batchPlay([{ _obj: 'ripple', amount: (detail * 10) - 1, rippleSize: { _enum: 'rippleSize', _value: 'large' } }], {})
-        if (appliedGlow) await doc.resizeImage(docWidth, docHeight, docResolution, constants.ResampleMethod.BILINEAR, 0)
-        docH = doc.height
-        docW = doc.width
-        docSize = Math.max(docH, docW)
-        // if (glowType === 'bloom') {
-        //   scale = scale2 = docSize / 5000
-        // } else {
-        scale = docSize / 400
-        scale2 = docSize / 12000
-        // }
+  async function blurGlare (layer: Layer) {
+    if (detail > 0) {
+      if (appliedGlow) {
+        if (docWidth > docHeight) await doc.resizeImage(1500, undefined, docResolution, constants.ResampleMethod.BILINEAR, 0)
+        else await doc.resizeImage(undefined, 1200, docResolution, constants.ResampleMethod.BILINEAR, 0)
       }
-      let secondGlare: Layer | undefined
-      let secondGlareAngle = 0
+      setActiveLayer(layer)
+      await batchPlay([{ _obj: 'ripple', amount: (detail * 10) - 1, rippleSize: { _enum: 'rippleSize', _value: 'large' } }], {})
+      if (appliedGlow) await doc.resizeImage(docWidth, docHeight, docResolution, constants.ResampleMethod.BILINEAR, 0)
+      docH = doc.height
+      docW = doc.width
+      docSize = Math.max(docH, docW)
+      // if (glowType === 'bloom') {
+      //   scale = scale2 = docSize / 5000
+      // } else {
+      scale = docSize / 400
+      scale2 = docSize / 12000
+      // }
+    }
+    let secondGlare: Layer | undefined
+    let secondGlareAngle = 0
+    if (times === 4) {
+      secondGlare = (await layer.duplicate())!
+      secondGlare.fillOpacity = intensity
+      secondGlareAngle = angle + 90
+      secondGlareAngle = secondGlareAngle > 90 ? -(-180 + secondGlareAngle) : -(90 + angle)
+    }
+    const motionBlurAmount = 10
+    for (let o = 0; o < motionBlurAmount; o++) {
+      await motionBlur(layer, -angle, size * scale)
       if (times === 4) {
-        secondGlare = (await layer.duplicate())!
-        secondGlare.fillOpacity = intensity
-        secondGlareAngle = angle + 90
-        secondGlareAngle = secondGlareAngle > 90 ? -(-180 + secondGlareAngle) : -(90 + angle)
+        await motionBlur(secondGlare!, secondGlareAngle, size * scale)
+        if (brightnessLevel > 0) await levels(secondGlare!, 200 + (brightnessLevel * 0.21568627450980393))
       }
-      const motionBlurAmount = 10
-      for (let o = 0; o < motionBlurAmount; o++) {
-        await motionBlur(layer, -angle, size * scale)
-        if (times === 4) {
-          await motionBlur(secondGlare!, secondGlareAngle, size * scale)
-          if (brightnessLevel > 0) await levels(secondGlare!, 200 + (brightnessLevel * 0.21568627450980393))
-        }
-        if (brightnessLevel > 0) await levels(layer, 200 + (brightnessLevel * 0.21568627450980393))
-      }
-    } else await gaussianBlur(layer, size * scale)
+      if (brightnessLevel > 0) await levels(layer, 200 + (brightnessLevel * 0.21568627450980393))
+    }
   }
 
   if (brightness > 253) brightness -= 3
@@ -281,7 +280,6 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     colorize,
     detail: detail | 0,
     glowType,
-    range,
     hue: hue | 0,
     intensity,
     lightness: lightness | 0,
@@ -290,7 +288,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     size,
     threshold,
     layerName,
-    sameBlur
+    sameBlur,
+    linearBlur
   })
   const brightnessLevel = 254 - brightness
   app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
@@ -349,53 +348,75 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   }
 
   if (appliedGlow) app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.SIXTEEN
-  await levelsB(outherGlow, threshold)
-  await levelsB(luminosityMask, threshold)
-  luminosityMask.blendMode = constants.BlendMode.MULTIPLY
 
-  await batchPlay([
-    { _obj: 'mergeLayersNew' },
-    { _obj: 'levels', presetKind: { _enum: 'presetKindType', _value: 'presetKindCustom' }, adjustment: [{ channel: { _ref: 'channel', _enum: 'channel', _value: 'composite' }, input: [10, 255], _obj: 'levelsAdjustment' }] }
-  ], {})
+  if (glowType === 'bloom-soft') {
+    setActiveLayer(luminosityMask)
+    luminosityMask.delete()
+    setActiveLayer(outherGlow)
+
+    await batchPlay([
+      { _obj: 'colorRange', colorModel: 0, colors: { _enum: 'colors', _value: 'highlights' }, highlightsFuzziness: 30, highlightsLowerLimit: 255 * (1 - threshold) | 0 },
+      { _obj: 'inverse' },
+      { _obj: 'delete' },
+      { _obj: 'set', _target: [{ _property: 'selection', _ref: 'channel' }], to: { _enum: 'ordinal', _value: 'none' } }
+    ], {})
+  } else {
+    await levelsB(outherGlow, threshold)
+    await levelsB(luminosityMask, threshold)
+    luminosityMask.blendMode = constants.BlendMode.MULTIPLY
+
+    await batchPlay([
+      { _obj: 'mergeLayersNew' },
+      { _obj: 'levels', presetKind: { _enum: 'presetKindType', _value: 'presetKindCustom' }, adjustment: [{ channel: { _ref: 'channel', _enum: 'channel', _value: 'composite' }, input: [10, 255], _obj: 'levelsAdjustment' }] }
+    ], {})
+  }
 
   const rangeLayer = (await outherGlow.duplicate(bloomsProGlow, constants.ElementPlacement.PLACEBEFORE))!
-  outherGlow.blendMode = constants.BlendMode.SCREEN
-  const coreGlow = (await outherGlow.duplicate())!
-  await exposure(coreGlow, brightness)
-  coreGlow.blendMode = constants.BlendMode.COLORDODGE
-  await blackAndWhite(coreGlow)
+  outherGlow.blendMode = glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
+  let coreGlow: Layer | null = null
+  if (glowType !== 'bloom-soft') {
+    coreGlow = await outherGlow.duplicate()
+    await exposure(coreGlow!!, brightness)
+    coreGlow!!.blendMode = constants.BlendMode.COLORDODGE
+    await blackAndWhite(coreGlow!!)
+  }
   if (brightness > 0) await exposure(outherGlow, brightness)
   rangeLayer.blendMode = constants.BlendMode.NORMAL
   rangeLayer.name = 'BloomsPro_Range'
   rangeLayer.fillOpacity = 100
   setActiveLayer(rangeLayer)
   await createRedAlert()
+
   outherGlow.fillOpacity = intensity
   setActiveLayer(outherGlow)
-  await blurLayer(outherGlow)
+  if (glowType === 'glare') await blurGlare(outherGlow)
+  else if (glowType === 'bloom') await gaussianBlur(outherGlow, size * scale)
+
   if (sameBlur) {
     await gaussianBlur(outherGlow, size * scale2 * 4)
     await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
-    if (glowType !== 'glare') coreGlow.fillOpacity = intensity
+    if (glowType === 'bloom') coreGlow!!.fillOpacity = intensity
   } else {
     await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
-    if (glowType !== 'glare') coreGlow.fillOpacity = intensity
-    for (let i = 1; i <= times; i++) await gaussianBlur(doc.layers[2]!.layers![1 + i], size * scale2 * (2 ** i))
+    if (glowType === 'bloom') coreGlow!!.fillOpacity = intensity
+    for (let i = 1, start = +(glowType !== 'bloom-soft'); i <= times; i++) await gaussianBlur(doc.layers[2]!.layers![start + i], size * scale2 * (linearBlur ? i : 2 ** i))
   }
-  if (glowType === 'glare') await motionBlur(coreGlow, -angle, size * scale, 2)
-  if (brightness > 0) await exposure(coreGlow, brightness)
+  if (glowType === 'glare') await motionBlur(coreGlow!!, -angle, size * scale, 2)
+
+  if (brightness > 0 && glowType !== 'bloom-soft') await exposure(coreGlow!!, brightness)
   if (colorize) await updateHue(hue, saturation, lightness - 100, glowParametersName, glowType)
   setActiveLayer(bloomsProGlow)
   await batchPlay([{ _obj: 'mergeLayersNew' }], {})
-  bloomsProGlow.blendMode = constants.BlendMode.SCREEN
+  bloomsProGlow.blendMode = glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
   doc.layers.getByName(glowParametersName).move(bloomsProGrp, constants.ElementPlacement.PLACEINSIDE)
   rangeLayer.move(bloomsProGlow, constants.ElementPlacement.PLACEBEFORE)
+  rangeLayer.visible = false
   if ((intensity > 0) && (brightness > 0)) {
     await exposure(app.activeDocument.activeLayers[0], brightness)
     await batchPlay([{ _obj: 'brightnessEvent', brightness: (brightness / 1.7) / 2, center: 0, useLegacy: false }], {})
   }
   setActiveLayer(bloomsProGlow)
-  rangeLayer.visible = false
+
   if (chromaticAberration > 0) {
     const chromaLayer = (await bloomsProGlow.duplicate())!
     chromaLayer.blendMode = constants.BlendMode.LIGHTEN
@@ -405,7 +426,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     bloomsProGlow.visible = true
     await batchPlay([{ _obj: 'mergeLayersNew' }], {})
   }
-  rangeLayer.visible = range
+
   // setActiveLayer(bloomsProGrp)
   // bloomsProGrp.allLocked = true
   // setActiveLayer(bloomsProSourceLayer)
@@ -545,9 +566,10 @@ async function generateBloomsProElement () {
   return name
 }
 
-export const getRangeLayer = () => app.activeDocument.layers.find(it => it.name === 'BloomsPro_Grp')?.layers?.find(it => it.name === 'BloomsPro_Range')
+export const getGroup = () => app.activeDocument.layers.find(it => it.name === 'BloomsPro_Grp')
+export const getRangeLayer = () => getGroup()?.layers?.find(it => it.name === 'BloomsPro_Range')
 
-export async function apply (isCancel = false) {
+export async function apply (enableMask = false, isCancel = false) {
   let error: Error | undefined
   const options = getCurrentOptions()
   if (!options) return
@@ -562,7 +584,19 @@ export async function apply (isCancel = false) {
       app.activeDocument.layers.getByName('BloomsPro_SourceLayer').visible = false
       app.activeDocument.layers[0]!.layers![0].visible = false
       await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
-      app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && (it.blendMode = constants.BlendMode.SCREEN))
+      for (const it of app.activeDocument.layers) {
+        if (it.name !== options.layerName || it.kind !== constants.LayerKind.SMARTOBJECT) return
+        it.blendMode = options.glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
+        if (!enableMask) continue
+        setActiveLayer(it)
+        await batchPlay([{ _obj: 'make', at: { _enum: 'channel', _ref: 'channel', _value: 'mask' }, new: { _class: 'channel' }, using: { _enum: 'userMaskEnabled', _value: 'hideAll' } }], {})
+      }
+      if (enableMask) {
+        await batchPlay([
+          { _obj: 'select', _target: [{ _ref: 'paintbrushTool' }] },
+          { _obj: 'reset', _target: [{ _property: 'colors', _ref: 'color' }] }
+        ])
+      }
     }
     if (!isDarwin) await togglePalettes()
   }, 'BloomsPro - Apply')

@@ -5,12 +5,12 @@ import Checkbox from './Checkbox'
 import lang from '../locales'
 import { app, core } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
-import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer } from '../algorithm'
+import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer, getGroup } from '../algorithm'
 
 const glareTimes = [2, 4]
 const bloomTimes = [1, 2, 3, 4, 5, 6, 7, 8]
 
-const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
+const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   const [time, setTime] = React.useContext(TimeCostContext)
   const options = getCurrentOptions()
 
@@ -31,7 +31,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
     }
   }
 
-  const apply = (isCancel = false) => _apply(isCancel).catch(e => {
+  const apply = (isCancel = false) => _apply(localStorage.getItem('enableMask') === 'true', isCancel).catch(e => {
     console.error(e)
     error(e.message)
   }).finally(refresh)
@@ -52,22 +52,23 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   }
 
   return (
-    <div className='onxxic'>
+    <div className='options'>
       <div className='type'>
         <Picker
           placeholder={lang.mode}
           label={lang.mode}
           size='S'
-          value={+(options.glowType === 'glare')}
-          onChange={val => regenerate({ ...options, glowType: val ? 'glare' : 'bloom' })}
+          value={options.glowType === 'bloom-soft' ? 0 : options.glowType === 'bloom' ? 1 : 2}
+          onChange={val => regenerate({ ...options, glowType: val === 0 ? 'bloom-soft' : val === 1 ? 'bloom' : 'glare' })}
           class='mode'
         >
-          <sp-menu-item> {lang.o.types.bloom} </sp-menu-item>
-          <sp-menu-item> {lang.o.types.glare} </sp-menu-item>
+          <sp-menu-item> {lang.types.bloomSoft} </sp-menu-item>
+          <sp-menu-item> {lang.types.bloom} </sp-menu-item>
+          <sp-menu-item> {lang.types.glare} </sp-menu-item>
         </Picker>
         <Picker
-          placeholder={options.glowType === 'glare' ? lang.o.glare.rayCount : lang.o.blurTimes}
-          label={options.glowType === 'glare' ? lang.o.glare.rayCount : lang.o.blurTimes}
+          placeholder={options.glowType === 'glare' ? lang.glare.rayCount : lang.blurTimes}
+          label={options.glowType === 'glare' ? lang.glare.rayCount : lang.blurTimes}
           size='S'
           class='ray-number'
           value={options.glowType === 'glare' ? +(options.times === 4) : options.times - 1}
@@ -115,13 +116,13 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             max={90}
             min={-90}
             value-label='°'
-            label={lang.o.glare.rotation}
+            label={lang.glare.rotation}
             onChange={val => regenerate({ ...options, angle: val })}
           />
           <Slider
             value={options.detail}
             value-label='%'
-            label={lang.o.glare.postBlur}
+            label={lang.glare.postBlur}
             onChange={val => regenerate({ ...options, detail: val })}
           />
         </>
@@ -148,7 +149,7 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             }
             regenerate({ ...options, colorize })
           }}
-        >{lang.o.colorize}
+        >{lang.colorize}
         </Checkbox>
         {options.colorize && (
           <div
@@ -161,30 +162,46 @@ const Onxxic: React.FC<{ refresh: () => void }> = ({ refresh }) => {
           />
         )}
       </div>
-      <Checkbox
-        class='checkbox'
-        checked={options.sameBlur}
-        onChange={sameBlur => regenerate({ ...options, sameBlur })}
-      >{lang.o.sameBlur}
-      </Checkbox>
-      <Checkbox
-        class='checkbox'
-        id='show-range'
-        checked={getRangeLayer()?.visible}
-        onChange={() => {
-          const layer = getRangeLayer()
-          if (!layer) return
-          core.executeAsModal(async () => {
-            layer.visible = !layer.visible
-            const elm = document.getElementById('show-range') as any
-            if (!elm) return
-            elm.checked = layer.visible
-          }, { commandName: 'Show Range' })
-        }}
-      >{lang.o.showRange}
-      </Checkbox>
+      <div className='checkboxs'>
+        <Checkbox class='checkbox' checked={options.sameBlur} onChange={sameBlur => regenerate({ ...options, sameBlur })}>{lang.sameBlur}</Checkbox>
+        {!options.sameBlur && <Checkbox class='checkbox' checked={options.linearBlur} onChange={linearBlur => regenerate({ ...options, linearBlur })}>{lang.linearBlur}</Checkbox>}
+      </div>
+      <div className='checkboxs'>
+        <Checkbox
+          class='checkbox'
+          id='show-original'
+          checked={!getGroup()?.visible}
+          onChange={() => {
+            const layer = getGroup()
+            if (!layer) return
+            core.executeAsModal(async () => {
+              layer.visible = !layer.visible
+              const elm = document.getElementById('show-original') as any
+              if (!elm) return
+              elm.checked = layer.visible
+            }, { commandName: 'Show Original' })
+          }}
+        >{lang.originalImage}
+        </Checkbox>
+        <Checkbox
+          class='checkbox'
+          id='show-range'
+          checked={getRangeLayer()?.visible}
+          onChange={() => {
+            const layer = getRangeLayer()
+            if (!layer) return
+            core.executeAsModal(async () => {
+              layer.visible = !layer.visible
+              const elm = document.getElementById('show-range') as any
+              if (!elm) return
+              elm.checked = layer.visible
+            }, { commandName: 'Show Range' })
+          }}
+        >{lang.showRange}
+        </Checkbox>
+      </div>
     </div>
   )
 }
 
-export default Onxxic
+export default Options
