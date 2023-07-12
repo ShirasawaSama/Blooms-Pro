@@ -1,16 +1,42 @@
-# Starter Photoshop Plugin (Vanilla)
+# Blooms Pro
 
-This starter plugin is a good place to get started when developing for Photoshop. It does not rely on any frameworks or build steps -- hence the name "Vanilla".
+Easily create glow effects in Photoshop.
 
-## Load into Photoshop
+在 PS 中轻松创建泛光与柔焦效果
 
-Make sure Photoshop is up and running first. First, add the plugin to the "Developer Workspace" in the UXP Developer Tools (UDT) application.
-  * If you selected "Create Plugin..." earlier, it will have already be there with the plugin ID and name you specified. 
-  * Otherwise, click "Add Plugin" and select the `manifest.json` file in the corresponding plugin folder.
+![Screenshot](screenshots/home.png)
 
-Click the ••• button next to the corresponding workspace entry, and click "Load". Switch over to Photoshop, and the plugin's panel will be running. 
+![Sample](screenshots/sample.jpg)
 
-## Continue creating
+## Features - 特性
 
-* Read more about creating and debugging plugins using the UDT application [here](https://developer.adobe.com/photoshop/uxp/2022/guides/devtool/udt-walkthrough/). 
-* We build on this starter template and show you how to [edit a document](https://developer.adobe.com/photoshop/uxp/2022/guides/getting-started/editing-the-document/) and [write a file](https://developer.adobe.com/photoshop/uxp/2022/guides/getting-started/writing-a-file/) using UXP. 
+- Mac M1 support - 原生支持 Mac M1 芯片
+- Free and open source - 免费开源
+- Multi-Language support - 多语言支持
+- Multiple lighting effects support - 多种光效支持 (泛光、柔光泛光、线性光)
+- Colorize support - 支持光着色
+- Faster than other similar plugins - 比其他同类插件更快 (Mac M1: 0.5s vs 1.5s)
+- More options - 更多选项 (e.g. 模糊层数、线性模糊、色散等)
+
+## Usage - 如何安装
+
+You should download the [Blooms-Pro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Blooms-Pro.ccx) file first.
+
+### Method 1: One Click Installer - 方法一: 安装包
+
+Just run the ccx file. That's all.
+
+直接双击运行即可. **(需要正版 PS)**
+
+### Method 2: Unzip - 方法二: 手动解压
+
+1. Unzip the ccx file - 将下载到的 ccx 文件直接解压为一个文件夹
+2. Move the unzipped folder to the Photoshop `Plug-ins` folder - 把解压到的文件夹直接复制到 PS 安装目录下的 `Plug-ins` 文件夹中并重启 PS
+
+## Author
+
+Shirasawa
+
+## License
+
+[AGPL-3.0](LICENSE)
