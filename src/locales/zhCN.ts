@@ -26,6 +26,7 @@ const lang: typeof langType = {
   chromaticAberration: '色散',
   cancel: '取消',
   apply: '应用',
+  edit: '编辑',
   second: '秒',
   enableMask: '启用蒙版',
   originalImage: '原始图像'

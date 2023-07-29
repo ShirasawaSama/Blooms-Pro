@@ -11,10 +11,10 @@ import lang from '../locales'
 const events = ['layersFiltered', 'close', 'hostFocusChanged']
 const App: React.FC = () => {
   const [currentDocument, setCurrentDocument] = React.useState<Document>(() => photoshop.app.activeDocument)
-  const [mode, setMode] = React.useState(0)
+  const [mode, setMode] = React.useState(false)
   const obj = useState(0)
 
-  const refresh = () => photoshop.app.activeDocument?.layers && setMode(photoshop.app.activeDocument.layers.some(it => it.name === 'BloomsPro_SourceLayer') ? 2 : 0)
+  const refresh = () => photoshop.app.activeDocument?.layers && setMode(photoshop.app.activeDocument.layers.some(it => it.name === 'BloomsPro_SourceLayer'))
 
   useEffect(() => {
     let lastDocument: Document
@@ -31,7 +31,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <sp-body size='S' class='github'>Blooms Pro By:&nbsp;
+      <sp-body size='S' class='github'>Blooms Pro <span style={{ fontSize: '10px' }}>(v0.0.1)</span> By:&nbsp;
         <a
           href='https://github.com/ShirasawaSama/Blooms-Pro'
           onClick={() => uxp.shell.openExternal('https://github.com/ShirasawaSama/Blooms-Pro', lang.thanksForStar)}
@@ -39,7 +39,7 @@ const App: React.FC = () => {
         </a>
       </sp-body>
       <TimeCostContext.Provider value={[obj[0], obj[1]]}>
-        {mode === 2 ? <Options key={currentDocument?.id} refresh={refresh} /> : <Home refresh={refresh} />}
+        {mode ? <Options key={currentDocument?.id} refresh={refresh} /> : <Home refresh={refresh} />}
       </TimeCostContext.Provider>
     </>
   )

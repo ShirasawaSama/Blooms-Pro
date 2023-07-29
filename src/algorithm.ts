@@ -1,7 +1,3 @@
-// import { ActionDescriptor } from '../am-to-uxp/ActionDescriptor'
-// import { stringIDToTypeID, executeAction, DialogModes, charIDToTypeID } from '../am-to-uxp/index'
-// import { ActionReference } from '../am-to-uxp/ActionReference'
-// import { ActionList } from '../am-to-uxp/ActionList'
 import photoshop, { core } from 'photoshop'
 import type { Layer } from 'photoshop/dom/Layer'
 import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from './utils'
@@ -12,16 +8,6 @@ function charIDToTypeID (charID: string): number {
 }
 
 const { app, constants, action: { batchPlay } } = photoshop
-// photoshop.action.addNotificationListener(['all'], console.log)
-
-// const batchPlay = (...args: any[]) => {
-//   args[0].forEach(it => {
-//     it._options = {
-//       dialogOptions: 'dontDisplay'
-//     }
-//   })
-//   return ff(...args).then(it => console.log(args[0], it))
-// }
 
 const setActiveLayer = (layer: Layer) => {
   app.activeDocument.activeLayers.forEach(it => layer !== it && (it.selected = false))
@@ -31,22 +17,7 @@ async function gaussianBlur (activeLay: Layer, blurSize: number) {
   setActiveLayer(activeLay)
   await batchPlay([{ _obj: 'gaussianBlur', radius: { _unit: 'pixelsUnit', _value: blurSize } }], {})
 }
-// window.charIDToTypeID = charIDToTypeID
-// window.stringIDToTypeID = stringIDToTypeID
-// window.ActionDescriptor = ActionDescriptor
-// window.ActionList = ActionList
-// window.ActionReference = ActionReference
-// window.executeAction = (eventID: number) => {
-//   // const obj = (descriptor ? descriptor.toBatchPlay())
-//   const descToPlay = JSON.stringify([
-//     {
-//       _obj: (photoshop.action as any).getStringFromID(eventID),
-//       // ...obj
-//     }
-//   ])
-//   console.log(descToPlay)
-// }
-// window.DialogModes = {}
+
 async function levelsB (activeLay: Layer, gamma: number) {
   setActiveLayer(activeLay)
   await batchPlay([{
@@ -190,7 +161,6 @@ export interface GlowOptions {
   threshold: number
   angle: number
   glowType: 'bloom-soft' | 'bloom' | 'glare'
-  range: boolean
   colorize: boolean
   hue: number
   saturation: number
@@ -203,6 +173,38 @@ export interface GlowOptions {
   sameBlur: boolean
   linearBlur: boolean
 }
+const optionsMap: Record<keyof GlowOptions, string> = {
+  intensity: 'i',
+  size: 's',
+  threshold: 't',
+  angle: 'a',
+  glowType: 'g',
+  colorize: 'c',
+  hue: 'h',
+  saturation: 's',
+  lightness: 'l',
+  brightness: 'b',
+  times: 'T',
+  detail: 'd',
+  chromaticAberration: 'C',
+  layerName: 'L',
+  sameBlur: 'B',
+  linearBlur: 'u'
+}
+const reverseMap: Record<string, string> = { }
+for (const key in optionsMap) reverseMap[(optionsMap as any)[key]] = key
+
+const toShortOptions = (o: GlowOptions) => {
+  const obj: Record<string, string> = { }
+  for (const key in optionsMap) obj[(optionsMap as any)[key]] = (o as any)[key]
+  return obj
+}
+export const toFullOptions = (o: Record<string, string>) => {
+  const obj: GlowOptions = { } as any
+  for (const key in reverseMap) (obj as any)[reverseMap[key]] = o[key]
+  return obj
+}
+
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
   let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur } = Object.assign({
     angle: 0,
@@ -220,7 +222,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     threshold: 0.25,
     layerName: '',
     sameBlur: false,
-    linearBlur: false
+    linearBlur: true
   }, options || {})
   async function blurGlare (layer: Layer) {
     if (detail > 0) {
@@ -234,12 +236,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
       docH = doc.height
       docW = doc.width
       docSize = Math.max(docH, docW)
-      // if (glowType === 'bloom') {
-      //   scale = scale2 = docSize / 5000
-      // } else {
       scale = docSize / 400
       scale2 = docSize / 12000
-      // }
     }
     let secondGlare: Layer | undefined
     let secondGlareAngle = 0
@@ -273,7 +271,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     return
   }
 
-  const glowParametersName = JSON.stringify({
+  const params: GlowOptions = {
     angle: angle | 0,
     brightness: brightness | 0,
     chromaticAberration: chromaticAberration | 0,
@@ -290,7 +288,10 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     layerName,
     sameBlur,
     linearBlur
-  })
+  }
+  const glowParametersName = JSON.stringify(toShortOptions(params))
+  delete (params as any).layerName
+  localStorage.setItem('options', glowParametersName)
   const brightnessLevel = 254 - brightness
   app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
   const docWidth = doc.width
@@ -312,7 +313,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   let outherGlow: Layer
   let luminosityMask: Layer
 
-  if (doc.historyStates[2].name !== 'BloomsPro_Init') {
+  if (doc.historyStates[2]?.name !== 'BloomsPro_Init') {
     if (doc.layers[0].name === 'MaskLayer') deleteLayer(doc.layers[0])
     if (doc.layers[0].name === 'BloomsPro_Grp') deleteLayer(doc.layers[0])
     setActiveLayer(tmpLayer)
@@ -399,7 +400,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   } else {
     await batchPlay(new Array(times).fill({ _obj: 'copyToLayer' }), {})
     if (glowType === 'bloom') coreGlow!!.fillOpacity = intensity
-    for (let i = 1, start = +(glowType !== 'bloom-soft'); i <= times; i++) await gaussianBlur(doc.layers[2]!.layers![start + i], size * scale2 * (linearBlur ? i : 2 ** i))
+    for (let i = 1, start = +(glowType !== 'bloom-soft'); i <= times; i++) await gaussianBlur(doc.layers[2]!.layers![start + i], size * scale2 * (linearBlur ? 2 * i : 2 ** i))
   }
   if (glowType === 'glare') await motionBlur(coreGlow!!, -angle, size * scale, 2)
 
@@ -427,32 +428,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     await batchPlay([{ _obj: 'mergeLayersNew' }], {})
   }
 
-  // setActiveLayer(bloomsProGrp)
-  // bloomsProGrp.allLocked = true
-  // setActiveLayer(bloomsProSourceLayer)
-  // bloomsProSourceLayer.allLocked = true
   setActiveLayer(tmpLayer)
-  // if (usingMask == true) {
-  //   const idpast = charIDToTypeID('past')
-  //   const desc8327 = new ActionDescriptor()
-  //   const idinPlace = stringIDToTypeID('inPlace')
-  //   desc8327.putBoolean(idinPlace, true)
-  //   const idAntA = charIDToTypeID('AntA')
-  //   const idAnnt = charIDToTypeID('Annt')
-  //   const idAnno = charIDToTypeID('Anno')
-  //   desc8327.putEnumerated(idAntA, idAnnt, idAnno)
-  //   const idAs = charIDToTypeID('As  ')
-  //   const idPxel = charIDToTypeID('Pxel')
-  //   desc8327.putClass(idAs, idPxel)
-  //   executeAction(idpast, desc8327, DialogModes.NO)
-  //   with (doc.activeLayer) {
-  //     move(doc.layers[0], ElementPlacement.PLACEBEFORE)
-  //     name = 'MaskLayer'
-  //     opacity = 60
-  //     visible = false
-  //     allLocked = true
-  //   }
-  // }
 }
 
 function createSnapshot (name: string) {
@@ -474,23 +450,18 @@ async function optimizeBloomsPro () {
     await app.activeDocument.resizeImage(docSizeLong, undefined, 72, constants.ResampleMethod.BILINEAR, 0)
   }
 }
-async function updateBloomsProSourceLayer (userDocument: string) {
+async function updateBloomsProSourceLayer () {
   const bloomsProDoc = app.activeDocument
-  app.activeDocument = app.documents.getByName(userDocument)
   hideElements()
   app.activeDocument = bloomsProDoc
   await batchPlay([{
     _obj: 'applyImageEvent',
-    with: { to: [{ _ref: 'channel', _enum: 'channel', _value: 'RGB' }, { _ref: 'layer', _enum: 'ordinal', _value: 'merged' }, { _ref: 'document', _name: userDocument }], preserveTransparency: true, _obj: 'calculation' }
+    with: { to: [{ _ref: 'channel', _enum: 'channel', _value: 'RGB' }, { _ref: 'layer', _enum: 'ordinal', _value: 'merged' }, { _ref: 'document', _name: '' }], preserveTransparency: true, _obj: 'calculation' }
   }], {})
 }
-async function changeDocumentSize (isEditMode = false, userDoc = '', is16Bits = false) {
-  if (isEditMode) {
-    await updateBloomsProSourceLayer(userDoc)
-  }
-  if (is16Bits) {
-    app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.EIGHT
-  }
+async function changeDocumentSize (isEditMode = false, is16Bits = false) {
+  if (isEditMode) await updateBloomsProSourceLayer()
+  if (is16Bits) app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.EIGHT
   await createSnapshot('BloomsPro_HQ')
   await optimizeBloomsPro()
 }
@@ -518,26 +489,19 @@ async function openSmartObj (objName: string) {
   ], {})
 }
 function showBloomsProSourceLayer () {
-  app.activeDocument.layers.getByName('BloomsPro_SourceLayer').visible = true
+  const layer = app.activeDocument.layers.getByName('BloomsPro_SourceLayer')
+  if (layer) layer.visible = true
   setActiveLayer(app.activeDocument.layers[app.activeDocument.layers.length - 1])
 }
-async function openBloomsProElement (bloomsProElementLayer: string, userDoc?: string) {
-  try {
-    await openSmartObj(bloomsProElementLayer)
-  } catch (e) {
-    return 'Sorry, this BloomsPro_Element cannot be opened, it may have been rasterized. Please render a new BloomsPro_Element.'
-  }
-  if (userDoc) {
-    if (app.documents.getByName(userDoc).bitsPerChannel === constants.BitsPerChannelType.SIXTEEN) {
-      app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.SIXTEEN
-    }
-  }
-  try {
-    showBloomsProSourceLayer()
-  } catch (e) {
-    return 'Sorry, this BloomsPro_Element has no internal structure, probably it has been manually modified. Please select a different BloomsPro_Element.'
-  }
-  await changeDocumentSize(true, userDoc, true)
+export async function openElement (bloomsProElementLayer: string, isEdit = false) {
+  await openSmartObj(bloomsProElementLayer)
+  const layer = app.activeDocument.layers[0]
+  if (isEdit) {
+    if (!app.activeDocument.layers.getByName('BloomsPro_SourceLayer')) throw new Error('No BloomsPro_SourceLayer!')
+  } else if (layer.name === bloomsProElementLayer) layer.name = 'BloomsPro_SourceLayer'
+
+  showBloomsProSourceLayer()
+  await changeDocumentSize(true, true)
 }
 function convertBits () {
   if (app.activeDocument.bitsPerChannel !== constants.BitsPerChannelType.EIGHT) {
@@ -556,12 +520,13 @@ async function generateBloomsProElement () {
   hideElements()
   await applyImage()
   await createSmartObj()
-  await openBloomsProElement(name)
+  await openElement(name)
   if (app.activeDocument.mode !== constants.DocumentMode.RGB) {
     await app.activeDocument.changeMode(constants.ChangeMode.RGB)
   }
-  app.activeDocument.layers[0].name = 'BloomsPro_SourceLayer'
-  await app.activeDocument.suspendHistory(() => changeDocumentSize(), 'BloomsPro - Initialize')
+  console.log(11111)
+  console.log(23333)
+  // await app.activeDocument.suspendHistory(() => changeDocumentSize(), 'BloomsPro - Initialize')
   convertBits()
   return name
 }
@@ -574,37 +539,41 @@ export async function apply (enableMask = false, isCancel = false) {
   const options = getCurrentOptions()
   if (!options) return
   await app.activeDocument.suspendHistory(async () => {
-    if (isCancel) {
-      await app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES)
-      app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && it.delete())
-    } else {
-      await batchPlay([{ _obj: 'select', _target: [{ _ref: 'snapshotClass', _name: 'BloomsPro_HQ' }] }], {})
-      await generateGlow(options, true)
-      app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.EIGHT
-      app.activeDocument.layers.getByName('BloomsPro_SourceLayer').visible = false
-      app.activeDocument.layers[0]!.layers![0].visible = false
-      await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
-      for (const it of app.activeDocument.layers) {
-        if (it.name !== options.layerName || it.kind !== constants.LayerKind.SMARTOBJECT) return
-        it.blendMode = options.glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
-        if (!enableMask) continue
-        setActiveLayer(it)
-        await batchPlay([{ _obj: 'make', at: { _enum: 'channel', _ref: 'channel', _value: 'mask' }, new: { _class: 'channel' }, using: { _enum: 'userMaskEnabled', _value: 'hideAll' } }], {})
+    try {
+      if (isCancel) {
+        await app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES)
+        app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && it.delete())
+      } else {
+        await batchPlay([{ _obj: 'select', _target: [{ _ref: 'snapshotClass', _name: 'BloomsPro_HQ' }] }], {})
+        await generateGlow(options, true)
+        app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.EIGHT
+        app.activeDocument.layers.getByName('BloomsPro_SourceLayer').visible = false
+        app.activeDocument.layers[0]!.layers![0].visible = false
+        await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
+        for (const it of app.activeDocument.layers) {
+          if (it.name !== options.layerName || it.kind !== constants.LayerKind.SMARTOBJECT) return
+          it.blendMode = options.glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
+          if (!enableMask) continue
+          setActiveLayer(it)
+          await batchPlay([{ _obj: 'make', at: { _enum: 'channel', _ref: 'channel', _value: 'mask' }, new: { _class: 'channel' }, using: { _enum: 'userMaskEnabled', _value: 'hideAll' } }], {})
+        }
+        if (enableMask) {
+          await batchPlay([
+            { _obj: 'select', _target: [{ _ref: 'paintbrushTool' }] },
+            { _obj: 'reset', _target: [{ _property: 'colors', _ref: 'color' }] }
+          ])
+        }
       }
-      if (enableMask) {
-        await batchPlay([
-          { _obj: 'select', _target: [{ _ref: 'paintbrushTool' }] },
-          { _obj: 'reset', _target: [{ _property: 'colors', _ref: 'color' }] }
-        ])
-      }
+      if (!isDarwin) await togglePalettes()
+    } catch (e) {
+      error = e as any
     }
-    if (!isDarwin) await togglePalettes()
   }, 'BloomsPro - Apply')
   if (!isDarwin) setTimeout(setFullScreenMode, 50, false)
   if (error) throw error
 }
 
-export async function generate () {
+export async function generate (options?: GlowOptions) {
   let error: Error | null = null
   if (!isDarwin) {
     await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
@@ -624,7 +593,7 @@ export async function generate () {
   if (error) return error
   await app.activeDocument.suspendHistory(async () => {
     try {
-      await generateGlow({ layerName })
+      await generateGlow({ ...(options || {}), layerName })
       await focusPluginPanel()
       if (!isDarwin) await toggleColorPanel()
     } catch (e: any) {
@@ -636,21 +605,23 @@ export async function generate () {
 
 export const getCurrentOptions = () => {
   try {
-    return JSON.parse(app.activeDocument.layers.getByName('BloomsPro_Grp')!.layers![1].name) as GlowOptions
+    const str = app.activeDocument.layers.getByName('BloomsPro_Grp')?.layers?.[1]?.name
+    if (!str?.startsWith('{')) return null
+    return toFullOptions(JSON.parse(str)) as GlowOptions
   } catch { }
   return null
 }
 
 export const regenerate = async (options: GlowOptions) => {
   let error: Error | undefined
-  await core.executeAsModal(async () => {
-  // await app.activeDocument.suspendHistory(async () => {
+  // await core.executeAsModal(async () => {
+  await app.activeDocument.suspendHistory(async () => {
     try {
       await generateGlow(options)
     } catch (e: any) {
       error = e
     }
-  }, { commandName: 'BloomsPro - Regenerate' })
-  // }, 'BloomsPro - Regenerate')
+  // }, { commandName: 'BloomsPro - Regenerate' })
+  }, 'BloomsPro - Regenerate')
   if (error) throw error
 }

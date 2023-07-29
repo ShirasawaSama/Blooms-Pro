@@ -58,12 +58,12 @@ const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
           placeholder={lang.mode}
           label={lang.mode}
           size='S'
-          value={options.glowType === 'bloom-soft' ? 0 : options.glowType === 'bloom' ? 1 : 2}
-          onChange={val => regenerate({ ...options, glowType: val === 0 ? 'bloom-soft' : val === 1 ? 'bloom' : 'glare' })}
+          value={options.glowType === 'bloom-soft' ? 1 : options.glowType === 'bloom' ? 0 : 2}
+          onChange={val => regenerate({ ...options, glowType: val === 1 ? 'bloom-soft' : val === 0 ? 'bloom' : 'glare' })}
           class='mode'
         >
-          <sp-menu-item> {lang.types.bloomSoft} </sp-menu-item>
           <sp-menu-item> {lang.types.bloom} </sp-menu-item>
+          <sp-menu-item> {lang.types.bloomSoft} </sp-menu-item>
           <sp-menu-item> {lang.types.glare} </sp-menu-item>
         </Picker>
         <Picker

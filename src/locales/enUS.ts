@@ -24,6 +24,7 @@ export default {
   chromaticAberration: 'Chromatic Aberration',
   cancel: 'Cancel',
   apply: 'Apply',
+  edit: 'Edit',
   second: 's',
   enableMask: 'Enable Mask',
   originalImage: 'Original Image'
