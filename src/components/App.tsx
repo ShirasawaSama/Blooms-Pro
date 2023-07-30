@@ -35,7 +35,7 @@ const App: React.FC = () => {
         <a
           href='https://github.com/ShirasawaSama/Blooms-Pro'
           onClick={() => uxp.shell.openExternal('https://github.com/ShirasawaSama/Blooms-Pro', lang.thanksForStar)}
-        >Shirasawa
+        >{lang.author}Shirasawa
         </a> <span style={{ fontSize: '9px' }}>(v{uxp.versions.plugin})</span>
       </sp-body>
       <TimeCostContext.Provider value={[obj[0], obj[1]]}>

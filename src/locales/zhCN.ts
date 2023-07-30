@@ -14,6 +14,7 @@ const lang: typeof langType = {
     postBlur: '后期模糊',
     rayCount: '光线数量'
   },
+  author: '白泽',
   colorize: '光着色',
   showRange: '显示采样范围',
   sameBlur: '每层模糊都相同',

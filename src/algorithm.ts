@@ -3,11 +3,6 @@ import type { Layer } from 'photoshop/dom/Layer'
 import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from './utils'
 import lang from './locales'
 
-const getStringFromID: (str: number) => string = (photoshop.action as any).getStringFromID
-function charIDToTypeID (charID: string): number {
-  return (charID.charCodeAt(0) * 0x1000000) + ((charID.charCodeAt(1) << 16) | (charID.charCodeAt(2) << 8) | charID.charCodeAt(3))
-}
-
 const { app, constants, action: { batchPlay } } = photoshop
 
 const setActiveLayer = (layer: Layer) => {
@@ -87,32 +82,24 @@ async function updateHue (h: number, s: number, l: number, layerName: string, gl
     await changeHue(newHueValue, s, l)
   }
 }
+
+// eslint-disable-next-line no-unused-vars
+enum ChannelType { RED = 'red', GREEN = 'green', BLUE = 'blue', RGB = 'RGB' }
 async function addChromaticAberration (layer: Layer | undefined | null, amount: number, scale: number) {
   if (layer) setActiveLayer(layer)
-  await addChromaToChannel('Rd  ', -amount * scale, amount)
-  await addChromaToChannel('Bl  ', amount * scale, amount)
-  await addChromaToChannel('Grn ', -(amount * 0.5) * scale, amount)
-  await selectChannel('RGB ')
+  await addChromaToChannel(ChannelType.RED, -amount * scale, amount)
+  await addChromaToChannel(ChannelType.BLUE, amount * scale, amount)
+  await addChromaToChannel(ChannelType.GREEN, -(amount * 0.5) * scale, amount)
+  await selectChannel(ChannelType.RGB)
 }
-async function addChromaToChannel (channel: string, offset: number, zoom: number) {
+async function addChromaToChannel (channel: ChannelType, offset: number, zoom: number) {
   await selectChannel(channel)
 
-  let channelName = ''
-  switch (channel) {
-    case 'Rd  ':
-      channelName = 'chromaRED'
-      break
-    case 'Bl  ':
-      channelName = 'chromaBLUE'
-      break
-    case 'Grn ':
-      channelName = 'chromaGREEN'
-      break
-  }
+  const channelName = 'chroma' + channel.toUpperCase()
   await batchPlay([
     { _obj: 'duplicate', _target: [{ _ref: 'channel', _enum: 'ordinal', _value: 'targetEnum' }], name: channelName },
     { _obj: 'show', null: [{ _ref: 'channel', _name: channelName }] },
-    { _obj: 'hide', null: [{ _ref: 'channel', _enum: 'channel', _value: getStringFromID(charIDToTypeID(channel)) }] },
+    { _obj: 'hide', null: [{ _ref: 'channel', _enum: 'channel', _value: channel }] },
 
     { _obj: 'offset', horizontal: offset, vertical: offset, fill: { _enum: 'fillMode', _value: 'repeat' } } // moveOffset
   ], {})
@@ -123,27 +110,16 @@ async function addChromaToChannel (channel: string, offset: number, zoom: number
   }
   await zoomBlur(zoom)
 }
-async function applyChannel (channel: string) {
-  let channelName = ''
-  switch (channel) {
-    case 'Rd  ':
-      channelName = 'chromaRED'
-      break
-    case 'Bl  ':
-      channelName = 'chromaBLUE'
-      break
-    case 'Grn ':
-      channelName = 'chromaGREEN'
-      break
-  }
+async function applyChannel (channel: ChannelType) {
+  const channelName = 'chroma' + channel.toUpperCase()
   await selectChannel(channel)
   await batchPlay([
     { _obj: 'applyImageEvent', with: { to: { _ref: [{ _ref: 'channel', _name: channelName }, { _ref: 'layer', _enum: 'ordinal', _value: 'merged' }] }, preserveTransparency: true, _obj: 'calculation' } },
     { _obj: 'delete', _target: [{ _ref: 'channel', _name: channelName }] }
   ], {})
 }
-async function selectChannel (channel: string) {
-  await batchPlay([{ _obj: 'select', _target: [{ _ref: 'channel', _enum: 'channel', _value: getStringFromID(charIDToTypeID(channel)) }] }], {})
+async function selectChannel (channel: ChannelType) {
+  await batchPlay([{ _obj: 'select', _target: [{ _ref: 'channel', _enum: 'channel', _value: channel }] }], {})
 }
 async function zoomBlur (amount: number) {
   await batchPlay([{ _obj: 'radialBlur', amount, blurMethod: { _enum: 'blurMethod', _value: 'zoom' }, blurQuality: { _enum: 'blurQuality', _value: '$Good' }, center: { horizontal: 0.5, vertical: 0.5, _obj: 'paint' } }], {})

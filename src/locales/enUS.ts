@@ -12,10 +12,11 @@ export default {
     postBlur: 'Post Blur',
     rayCount: 'Ray Count'
   },
-  colorize: '',
+  author: '',
+  colorize: 'Colorize',
   showRange: 'Show Range',
   sameBlur: 'Same Blur',
-  skipSkin: 'Protect SKin Color',
+  skipSkin: 'Skin Color Protection',
   linearBlur: 'Linear Blur',
   blurTimes: 'Blur Times',
   intensity: 'Intensity',
