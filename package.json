@@ -7,7 +7,8 @@
   "scripts": {
     "test": "eslint .",
     "start": "parcel watch src/index.html --no-hmr --no-source-maps --public-url .",
-    "build": "del-cli dist && parcel build src/index.html --no-source-maps --public-url . && npm run replace",
+    "build": "del-cli dist && parcel build src/index.html --no-source-maps --public-url . && npm run replace && npm run copy",
+    "copy": "cpy README.md LICENSE dist/",
     "replace": "node -e \"const fs = require('fs'); fs.writeFileSync('dist/index.html', fs.readFileSync('dist/index.html', 'utf-8').replace(' type=\\\"module\\\"', ''))\""
   },
   "repository": {
@@ -45,6 +46,7 @@
     "@types/react-dom": "^18.2.5",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
+    "cpy-cli": "^5.0.0",
     "del-cli": "^5.0.0",
     "eslint": "^8.42.0",
     "eslint-config-standard": "^17.1.0",
