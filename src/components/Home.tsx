@@ -1,7 +1,7 @@
 import React from 'react'
-import { app, core } from 'photoshop'
+import { app } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
-import { generate, openElement, toFullOptions } from '../algorithm'
+import { generate, editElement, toFullOptions } from '../algorithm'
 import lang from '../locales'
 
 const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
@@ -30,9 +30,7 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             const oldTime = Date.now()
             try {
               const layer = app.activeDocument.activeLayers[0]
-              if (layer) {
-                await core.executeAsModal(() => openElement(layer.name).catch(console.error), { commandName: 'BloomsPro - openElement' })
-              }
+              if (layer) await editElement(layer.name)
             } catch (e: any) {
               console.error(e)
               error(e.message)
@@ -44,7 +42,6 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         </sp-button>
       </div>
       <sp-checkbox
-        style={{ margin: '6px 14px' }}
         checked={localStorage.getItem('enableMask') === 'true' || undefined}
         onClick={(e: any) => localStorage.setItem('enableMask', e.target.checked.toString())}
       >{lang.enableMask}

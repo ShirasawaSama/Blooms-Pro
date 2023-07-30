@@ -148,6 +148,12 @@ async function selectChannel (channel: string) {
 async function zoomBlur (amount: number) {
   await batchPlay([{ _obj: 'radialBlur', amount, blurMethod: { _enum: 'blurMethod', _value: 'zoom' }, blurQuality: { _enum: 'blurQuality', _value: '$Good' }, center: { horizontal: 0.5, vertical: 0.5, _obj: 'paint' } }], {})
 }
+async function createSkinSelection () {
+  await batchPlay([
+    { UseFacesKey: true, _obj: 'colorRange', colorModel: 1, colors: { _enum: 'colors', _value: 'skinTone' }, dimension: 5, fuzziness: 20, negGaussClusters: 0, negGaussParams: [], negGaussTolerance: 0.0, negSpaGaussTolerance: 0.2800000011920929, posGaussClusters: 1, posGaussParams: [0.744720458984375, 0.744720458984375, 0.07843017578125, 0.523193359375, 0.523193359375, 0.02588195912539959, 0.679046630859375, 0.679046630859375, 0.02588195912539959, 0.4613037109375, 0.4613037109375, 0.2800000011920929, 0.803314208984375, 0.803314208984375, 0.2800000011920929], posGaussTolerance: 0.07843017578125, posSpaGaussTolerance: 0.2800000011920929 },
+    { _obj: 'duplicate', _target: [{ _property: 'selection', _ref: 'channel' }], name: 'Skin' }
+  ], {})
+}
 async function selectSkin () {
   await batchPlay([{ _obj: 'set', _target: [{ _property: 'selection', _ref: 'channel' }], to: { _name: 'Skin', _ref: 'channel' } }], { })
 }
@@ -183,6 +189,7 @@ export interface GlowOptions {
   sameBlur: boolean
   linearBlur: boolean
   skipSkin: boolean
+  isEdit: boolean
 }
 const optionsMap: Record<keyof GlowOptions, string> = {
   intensity: 'i',
@@ -201,7 +208,8 @@ const optionsMap: Record<keyof GlowOptions, string> = {
   layerName: 'L',
   sameBlur: 'B',
   linearBlur: 'u',
-  skipSkin: 'k'
+  skipSkin: 'k',
+  isEdit: 'e'
 }
 const reverseMap: Record<string, string> = { }
 for (const key in optionsMap) reverseMap[(optionsMap as any)[key]] = key
@@ -218,7 +226,7 @@ export const toFullOptions = (o: Record<string, string>) => {
 }
 
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
-  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur, skipSkin } = Object.assign({
+  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur, skipSkin, isEdit } = Object.assign({
     angle: 0,
     brightness: 0,
     chromaticAberration: 0,
@@ -235,7 +243,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     layerName: '',
     sameBlur: false,
     linearBlur: true,
-    skipSkin: false
+    skipSkin: false,
+    isEdit: false
   }, options || {})
   async function blurGlare (layer: Layer) {
     if (detail > 0) {
@@ -271,6 +280,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     }
   }
 
+  if (appliedGlow) isEdit = true
+
   if (brightness > 253) brightness -= 3
   const doc = app.activeDocument
   const bloomsProSourceLayer = doc.layers.getByName('BloomsPro_SourceLayer')
@@ -301,11 +312,13 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     layerName,
     sameBlur,
     linearBlur,
-    skipSkin
+    skipSkin,
+    isEdit
   }
   const glowParametersName = JSON.stringify(toShortOptions(params))
   delete (params as any).layerName
-  localStorage.setItem('options', glowParametersName)
+  delete (params as any).isEdit
+  localStorage.setItem('options', JSON.stringify(toShortOptions(params)))
   const brightnessLevel = 254 - brightness
   app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
   const docWidth = doc.width
@@ -331,10 +344,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     if (doc.layers[0].name === 'MaskLayer') deleteLayer(doc.layers[0])
     if (doc.layers[0].name === 'BloomsPro_Grp') deleteLayer(doc.layers[0])
     setActiveLayer(tmpLayer)
-    await batchPlay([
-      { UseFacesKey: true, _obj: 'colorRange', colorModel: 1, colors: { _enum: 'colors', _value: 'skinTone' }, dimension: 5, fuzziness: 20, negGaussClusters: 0, negGaussParams: [], negGaussTolerance: 0.0, negSpaGaussTolerance: 0.2800000011920929, posGaussClusters: 1, posGaussParams: [0.744720458984375, 0.744720458984375, 0.07843017578125, 0.523193359375, 0.523193359375, 0.02588195912539959, 0.679046630859375, 0.679046630859375, 0.02588195912539959, 0.4613037109375, 0.4613037109375, 0.2800000011920929, 0.803314208984375, 0.803314208984375, 0.2800000011920929], posGaussTolerance: 0.07843017578125, posSpaGaussTolerance: 0.2800000011920929 },
-      { _obj: 'duplicate', _target: [{ _property: 'selection', _ref: 'channel' }], name: 'Skin' }
-    ], {})
+    await createSkinSelection()
     await clearSelection()
 
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
@@ -353,6 +363,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
       }
     }
     setActiveLayer(tmpLayer)
+    if (skipSkin) await createSkinSelection()
 
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
     bloomsProGlow = (await doc.createLayerGroup({ name: glowParametersName }))!
@@ -575,7 +586,7 @@ export async function apply (enableMask = false, isCancel = false) {
     try {
       if (isCancel) {
         await app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES)
-        app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && it.delete())
+        if (!options.isEdit) app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && it.delete())
       } else {
         await batchPlay([{ _obj: 'select', _target: [{ _ref: 'snapshotClass', _name: 'BloomsPro_HQ' }] }], {})
         await generateGlow(options, true)
@@ -633,6 +644,35 @@ export async function generate (options?: GlowOptions) {
       error = e
     }
   }, 'BloomsPro - ' + lang.histories.generate)
+  return error
+}
+
+export async function editElement (layerName: string) {
+  let error: Error | null = null
+  if (!isDarwin) {
+    await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
+    await setFullScreenMode(true)
+  }
+
+  await app.activeDocument.suspendHistory(async () => {
+    try {
+      await setPerformanceMode()
+      await openElement(layerName)
+      await fitToScreen()
+    } catch (e: any) {
+      console.error(e)
+      error = e
+    }
+  }, 'BloomsPro - ' + lang.edit)
+
+  await core.executeAsModal(async () => {
+    try {
+      await focusPluginPanel()
+      if (!isDarwin) await toggleColorPanel()
+    } catch (e: any) {
+      error = e
+    }
+  }, { commandName: 'BloomsPro - ' + lang.histories.generate })
   return error
 }
 
