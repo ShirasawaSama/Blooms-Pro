@@ -5,6 +5,9 @@ on:
     types:
       - created
 
+permissions:
+  contents: write
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
