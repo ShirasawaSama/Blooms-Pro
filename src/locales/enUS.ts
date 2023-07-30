@@ -15,6 +15,7 @@ export default {
   colorize: '',
   showRange: 'Show Range',
   sameBlur: 'Same Blur',
+  skipSkin: 'Protect SKin Color',
   linearBlur: 'Linear Blur',
   blurTimes: 'Blur Times',
   intensity: 'Intensity',
@@ -27,5 +28,9 @@ export default {
   edit: 'Edit',
   second: 's',
   enableMask: 'Enable Mask',
-  originalImage: 'Original Image'
+  originalImage: 'Original Image',
+  histories: {
+    init: 'Init',
+    generate: 'Generate'
+  }
 }

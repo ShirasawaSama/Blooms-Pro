@@ -1,6 +1,7 @@
 import photoshop, { core } from 'photoshop'
 import type { Layer } from 'photoshop/dom/Layer'
 import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from './utils'
+import lang from './locales'
 
 const getStringFromID: (str: number) => string = (photoshop.action as any).getStringFromID
 function charIDToTypeID (charID: string): number {
@@ -147,6 +148,15 @@ async function selectChannel (channel: string) {
 async function zoomBlur (amount: number) {
   await batchPlay([{ _obj: 'radialBlur', amount, blurMethod: { _enum: 'blurMethod', _value: 'zoom' }, blurQuality: { _enum: 'blurQuality', _value: '$Good' }, center: { horizontal: 0.5, vertical: 0.5, _obj: 'paint' } }], {})
 }
+async function selectSkin () {
+  await batchPlay([{ _obj: 'set', _target: [{ _property: 'selection', _ref: 'channel' }], to: { _name: 'Skin', _ref: 'channel' } }], { })
+}
+async function fillWithBlack () {
+  await batchPlay([{ _obj: 'fill', mode: { _enum: 'blendMode', _value: 'normal' }, opacity: { _unit: 'percentUnit', _value: 100.0 }, using: { _enum: 'fillContents', _value: 'black' } }], {})
+}
+async function clearSelection () {
+  await batchPlay([{ _obj: 'set', _target: [{ _property: 'selection', _ref: 'channel' }], to: { _enum: 'ordinal', _value: 'none' } }], {})
+}
 
 function deleteLayer (layer: Layer) {
   layer.layers?.forEach(deleteLayer)
@@ -172,6 +182,7 @@ export interface GlowOptions {
   layerName: string
   sameBlur: boolean
   linearBlur: boolean
+  skipSkin: boolean
 }
 const optionsMap: Record<keyof GlowOptions, string> = {
   intensity: 'i',
@@ -189,7 +200,8 @@ const optionsMap: Record<keyof GlowOptions, string> = {
   chromaticAberration: 'C',
   layerName: 'L',
   sameBlur: 'B',
-  linearBlur: 'u'
+  linearBlur: 'u',
+  skipSkin: 'k'
 }
 const reverseMap: Record<string, string> = { }
 for (const key in optionsMap) reverseMap[(optionsMap as any)[key]] = key
@@ -206,7 +218,7 @@ export const toFullOptions = (o: Record<string, string>) => {
 }
 
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
-  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur } = Object.assign({
+  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur, skipSkin } = Object.assign({
     angle: 0,
     brightness: 0,
     chromaticAberration: 0,
@@ -222,7 +234,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     threshold: 0.25,
     layerName: '',
     sameBlur: false,
-    linearBlur: true
+    linearBlur: true,
+    skipSkin: false
   }, options || {})
   async function blurGlare (layer: Layer) {
     if (detail > 0) {
@@ -287,7 +300,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     threshold,
     layerName,
     sameBlur,
-    linearBlur
+    linearBlur,
+    skipSkin
   }
   const glowParametersName = JSON.stringify(toShortOptions(params))
   delete (params as any).layerName
@@ -317,6 +331,11 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     if (doc.layers[0].name === 'MaskLayer') deleteLayer(doc.layers[0])
     if (doc.layers[0].name === 'BloomsPro_Grp') deleteLayer(doc.layers[0])
     setActiveLayer(tmpLayer)
+    await batchPlay([
+      { UseFacesKey: true, _obj: 'colorRange', colorModel: 1, colors: { _enum: 'colors', _value: 'skinTone' }, dimension: 5, fuzziness: 20, negGaussClusters: 0, negGaussParams: [], negGaussTolerance: 0.0, negSpaGaussTolerance: 0.2800000011920929, posGaussClusters: 1, posGaussParams: [0.744720458984375, 0.744720458984375, 0.07843017578125, 0.523193359375, 0.523193359375, 0.02588195912539959, 0.679046630859375, 0.679046630859375, 0.02588195912539959, 0.4613037109375, 0.4613037109375, 0.2800000011920929, 0.803314208984375, 0.803314208984375, 0.2800000011920929], posGaussTolerance: 0.07843017578125, posSpaGaussTolerance: 0.2800000011920929 },
+      { _obj: 'duplicate', _target: [{ _property: 'selection', _ref: 'channel' }], name: 'Skin' }
+    ], {})
+    await clearSelection()
 
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
     bloomsProGlow = (await doc.createLayerGroup({ name: glowParametersName }))!
@@ -355,13 +374,29 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     luminosityMask.delete()
     setActiveLayer(outherGlow)
 
+    if (skipSkin) {
+      await selectSkin()
+      await batchPlay([{ _obj: 'delete' }], {})
+      await clearSelection()
+    }
+
     await batchPlay([
       { _obj: 'colorRange', colorModel: 0, colors: { _enum: 'colors', _value: 'highlights' }, highlightsFuzziness: 30, highlightsLowerLimit: 255 * (1 - threshold) | 0 },
       { _obj: 'inverse' },
-      { _obj: 'delete' },
-      { _obj: 'set', _target: [{ _property: 'selection', _ref: 'channel' }], to: { _enum: 'ordinal', _value: 'none' } }
+      { _obj: 'delete' }
     ], {})
+    await clearSelection()
   } else {
+    if (skipSkin) {
+      outherGlow.parent!.visible = false
+      await selectSkin()
+      outherGlow.parent!.visible = true
+      setActiveLayer(outherGlow)
+      await fillWithBlack()
+      setActiveLayer(luminosityMask)
+      await fillWithBlack()
+      await clearSelection()
+    }
     await levelsB(outherGlow, threshold)
     await levelsB(luminosityMask, threshold)
     luminosityMask.blendMode = constants.BlendMode.MULTIPLY
@@ -524,8 +559,6 @@ async function generateBloomsProElement () {
   if (app.activeDocument.mode !== constants.DocumentMode.RGB) {
     await app.activeDocument.changeMode(constants.ChangeMode.RGB)
   }
-  console.log(11111)
-  console.log(23333)
   // await app.activeDocument.suspendHistory(() => changeDocumentSize(), 'BloomsPro - Initialize')
   convertBits()
   return name
@@ -568,7 +601,7 @@ export async function apply (enableMask = false, isCancel = false) {
     } catch (e) {
       error = e as any
     }
-  }, 'BloomsPro - Apply')
+  }, 'BloomsPro - ' + lang.apply)
   if (!isDarwin) setTimeout(setFullScreenMode, 50, false)
   if (error) throw error
 }
@@ -589,7 +622,7 @@ export async function generate (options?: GlowOptions) {
       console.error(e)
       error = e
     }
-  }, 'BloomsPro - Create')
+  }, 'BloomsPro - ' + lang.histories.init)
   if (error) return error
   await app.activeDocument.suspendHistory(async () => {
     try {
@@ -599,7 +632,7 @@ export async function generate (options?: GlowOptions) {
     } catch (e: any) {
       error = e
     }
-  }, 'BloomsPro - Create')
+  }, 'BloomsPro - ' + lang.histories.generate)
   return error
 }
 
@@ -622,6 +655,6 @@ export const regenerate = async (options: GlowOptions) => {
       error = e
     }
   // }, { commandName: 'BloomsPro - Regenerate' })
-  }, 'BloomsPro - Regenerate')
+  }, 'BloomsPro - ' + lang.histories.generate)
   if (error) throw error
 }

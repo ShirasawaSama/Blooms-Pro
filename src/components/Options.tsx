@@ -167,6 +167,7 @@ const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         {!options.sameBlur && <Checkbox class='checkbox' checked={options.linearBlur} onChange={linearBlur => regenerate({ ...options, linearBlur })}>{lang.linearBlur}</Checkbox>}
       </div>
       <div className='checkboxs'>
+        <Checkbox class='checkbox' checked={options.skipSkin} onChange={skipSkin => regenerate({ ...options, skipSkin })}>{lang.skipSkin}</Checkbox>
         <Checkbox
           class='checkbox'
           id='show-original'

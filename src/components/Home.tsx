@@ -25,6 +25,7 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         >{lang.bloom}
         </sp-button>
         <sp-button
+          variant='secondary'
           onClick={async () => {
             const oldTime = Date.now()
             try {
@@ -43,6 +44,7 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         </sp-button>
       </div>
       <sp-checkbox
+        style={{ margin: '6px 14px' }}
         checked={localStorage.getItem('enableMask') === 'true' || undefined}
         onClick={(e: any) => localStorage.setItem('enableMask', e.target.checked.toString())}
       >{lang.enableMask}

@@ -31,12 +31,12 @@ const App: React.FC = () => {
 
   return (
     <>
-      <sp-body size='S' class='github'>Blooms Pro <span style={{ fontSize: '10px' }}>(v0.0.1)</span> By:&nbsp;
+      <sp-body size='S' class='github'>Blooms Pro By:&nbsp;
         <a
           href='https://github.com/ShirasawaSama/Blooms-Pro'
           onClick={() => uxp.shell.openExternal('https://github.com/ShirasawaSama/Blooms-Pro', lang.thanksForStar)}
         >Shirasawa
-        </a>
+        </a> <span style={{ fontSize: '9px' }}>(v{uxp.versions.plugin})</span>
       </sp-body>
       <TimeCostContext.Provider value={[obj[0], obj[1]]}>
         {mode ? <Options key={currentDocument?.id} refresh={refresh} /> : <Home refresh={refresh} />}

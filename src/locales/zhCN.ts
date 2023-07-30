@@ -17,6 +17,7 @@ const lang: typeof langType = {
   colorize: '光着色',
   showRange: '显示采样范围',
   sameBlur: '每层模糊都相同',
+  skipSkin: '肤色保护',
   linearBlur: '线性模糊',
   blurTimes: '模糊次数',
   intensity: '强度',
@@ -29,7 +30,11 @@ const lang: typeof langType = {
   edit: '编辑',
   second: '秒',
   enableMask: '启用蒙版',
-  originalImage: '原始图像'
+  originalImage: '原始图像',
+  histories: {
+    init: '初始化',
+    generate: '生成'
+  }
 }
 
 export default lang

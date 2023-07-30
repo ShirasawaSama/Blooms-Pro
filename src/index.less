@@ -1,9 +1,16 @@
 main {
-  padding: 4px 10px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+sp-button {
+  cursor: pointer;
 }
 
 .github {
   text-align: center;
+  padding: 4px 0 6px;
   a {
     color: inherit!important;
     font-weight: bold;
@@ -19,6 +26,9 @@ main {
 }
 
 .options {
+  overflow-y: auto;
+  padding: 0 10px 8px;
+
   .type {
     display: flex;
     margin-bottom: 5px;
