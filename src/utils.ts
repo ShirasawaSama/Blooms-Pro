@@ -113,8 +113,4 @@ export async function togglePalettes () {
   await action.batchPlay(jsxObj, { })
 }
 
-export async function toggleColorPanel () {
-  await core.performMenuCommand({ commandID: 1046 })
-}
-
 export const TimeCostContext = createContext([0 as number, (_: number | ((_: number) => number)) => {}] as const)

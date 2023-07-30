@@ -1,6 +1,6 @@
 import photoshop, { core } from 'photoshop'
 import type { Layer } from 'photoshop/dom/Layer'
-import { setFullScreenMode, setPerformanceMode, fitToScreen, focusPluginPanel, togglePalettes, toggleColorPanel, isDarwin } from './utils'
+import { setPerformanceMode, fitToScreen, focusPluginPanel } from './utils'
 import lang from './locales'
 
 const { app, constants, action: { batchPlay } } = photoshop
@@ -584,21 +584,21 @@ export async function apply (enableMask = false, isCancel = false) {
           ])
         }
       }
-      if (!isDarwin) await togglePalettes()
+      // if (!isDarwin) await togglePalettes()
     } catch (e) {
       error = e as any
     }
   }, 'BloomsPro - ' + lang.apply)
-  if (!isDarwin) setTimeout(setFullScreenMode, 50, false)
+  // if (!isDarwin) setTimeout(setFullScreenMode, 50, false)
   if (error) throw error
 }
 
 export async function generate (options?: GlowOptions) {
   let error: Error | null = null
-  if (!isDarwin) {
-    await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
-    await setFullScreenMode(true)
-  }
+  // if (!isDarwin) {
+  //   await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
+  //   await setFullScreenMode(true)
+  // }
   let layerName: string
   await app.activeDocument.suspendHistory(async () => {
     try {
@@ -615,7 +615,6 @@ export async function generate (options?: GlowOptions) {
     try {
       await generateGlow({ ...(options || {}), layerName })
       await focusPluginPanel()
-      if (!isDarwin) await toggleColorPanel()
     } catch (e: any) {
       error = e
     }
@@ -625,10 +624,10 @@ export async function generate (options?: GlowOptions) {
 
 export async function editElement (layerName: string) {
   let error: Error | null = null
-  if (!isDarwin) {
-    await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
-    await setFullScreenMode(true)
-  }
+  // if (!isDarwin) {
+  //   await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
+  //   await setFullScreenMode(true)
+  // }
 
   await app.activeDocument.suspendHistory(async () => {
     try {
@@ -644,7 +643,6 @@ export async function editElement (layerName: string) {
   await core.executeAsModal(async () => {
     try {
       await focusPluginPanel()
-      if (!isDarwin) await toggleColorPanel()
     } catch (e: any) {
       error = e
     }
