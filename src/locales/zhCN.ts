@@ -17,7 +17,7 @@ const lang: typeof langType = {
   colorize: '光着色',
   showRange: '显示采样范围',
   sameBlur: '每层模糊都相同',
-  skipSkin: '肤色保护',
+  skipSkin: '保护肤色',
   linearBlur: '线性模糊',
   blurTimes: '模糊次数',
   intensity: '强度',
