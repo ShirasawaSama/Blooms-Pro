@@ -21,18 +21,16 @@ Easily create glow effects in Photoshop.
 
 ## Usage - 如何安装
 
-You should download the [Blooms-Pro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Blooms-Pro.ccx) file first.
+### Method 1: One Click Installer - 方法一: 安装包 **(需要正版 PS)**
 
-### Method 1: One Click Installer - 方法一: 安装包
-
-Just run the ccx file. That's all.
-
-直接双击运行即可. **(需要正版 PS)**
+1. Download the [Blooms-Pro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Blooms-Pro.ccx) file - 下载 [Blooms-Pro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Blooms-Pro.ccx)
+2. Just run the ccx file. - 双击运行即可
 
 ### Method 2: Unzip - 方法二: 手动解压
 
-1. Unzip the ccx file - 将下载到的 ccx 文件直接解压为一个文件夹
-2. Move the unzipped folder to the Photoshop `Plug-ins` folder - 把解压到的文件夹直接复制到 PS 安装目录下的 `Plug-ins` 文件夹中并重启 PS
+1. Download the [shirasawa.BloomsPro.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/shirasawa.BloomsPro.zip) file - 下载 [shirasawa.BloomsPro.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/shirasawa.BloomsPro.zip)
+2. Unzip the zip file - 将下载到的 zip 文件直接解压为一个文件夹
+3. Move the unzipped folder to the Photoshop `Plug-ins` folder - 把解压到的整个文件夹直接复制到 PS 安装目录下的 `Plug-ins` 文件夹中并重启 PS
 
 ## Author
 
