@@ -152,7 +152,7 @@ export interface GlowOptions {
   size: number
   threshold: number
   angle: number
-  glowType: 'bloom-soft' | 'bloom' | 'glare'
+  glowType: 'bloom' | 'bloom-soft' | 'glare'
   colorize: boolean
   hue: number
   saturation: number
@@ -208,7 +208,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     chromaticAberration: 0,
     colorize: false,
     detail: 0,
-    glowType: 'bloom-soft',
+    glowType: 'bloom',
     hue: 0,
     intensity: 100,
     lightness: 0,
