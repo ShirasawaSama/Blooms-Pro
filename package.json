@@ -9,7 +9,8 @@
     "start": "parcel watch src/index.html --no-hmr --no-source-maps --public-url .",
     "build": "del-cli dist && parcel build src/index.html --no-source-maps --public-url . && npm run replace && npm run copy",
     "copy": "cpy README.md LICENSE dist/",
-    "replace": "node -e \"const fs = require('fs'); fs.writeFileSync('dist/index.html', fs.readFileSync('dist/index.html', 'utf-8').replace(' type=\\\"module\\\"', ''))\""
+    "replace": "node -e \"const fs = require('fs'); fs.writeFileSync('dist/index.html', fs.readFileSync('dist/index.html', 'utf-8').replace(' type=\\\"module\\\"', ''))\"",
+    "zip": "mv dist shirasawa.BloomsPro && zip -r shirasawa.BloomsPro.zip shirasawa.BloomsPro"
   },
   "repository": {
     "type": "git",

@@ -25,10 +25,7 @@ jobs:
         run: npm install
 
       - name: Build
-        run: npm run build && mv dist shirasawa.BloomsPro
-
-      - name: Create zip file
-        run: zip -r shirasawa.BloomsPro.zip shirasawa.BloomsPro
+        run: npm run build && npm run zip
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
