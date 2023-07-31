@@ -1,6 +1,6 @@
-import { action, core } from 'photoshop'
+import { action, core, app } from 'photoshop'
 import { createContext } from 'react'
-const fs = window.require('uxp').storage.localFileSystem
+const { storage: { localFileSystem: fs }, host } = window.require('uxp')
 
 export const isDarwin = window.require('os').platform() === 'darwin'
 
@@ -114,3 +114,17 @@ export async function togglePalettes () {
 }
 
 export const TimeCostContext = createContext([0 as number, (_: number | ((_: number) => number)) => {}] as const)
+
+export const suspendHistory = async (fn: () => void | Promise<any>, name: string) => {
+  let error: any
+  await app.activeDocument.suspendHistory(async () => {
+    try {
+      await fn()
+    } catch (e) {
+      error = e
+    }
+  }, name)
+  if (error) throw error
+}
+
+export const isNewVersionPS = !host.version.startsWith('23')

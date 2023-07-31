@@ -5,7 +5,7 @@
   "main": "index.html",
   "host": {
     "app": "PS",
-    "minVersion": "24.0.0"
+    "minVersion": "23.0.0"
   },
   "requiredPermissions": {
     "launchProcess": {    

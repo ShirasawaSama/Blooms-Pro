@@ -1,6 +1,6 @@
 import photoshop, { core } from 'photoshop'
 import type { Layer } from 'photoshop/dom/Layer'
-import { setPerformanceMode, fitToScreen, focusPluginPanel } from './utils'
+import { setPerformanceMode, fitToScreen, focusPluginPanel, suspendHistory, isNewVersionPS } from './utils'
 import lang from './locales'
 
 const { app, constants, action: { batchPlay } } = photoshop
@@ -139,6 +139,17 @@ async function fillWithBlack () {
 async function clearSelection () {
   await batchPlay([{ _obj: 'set', _target: [{ _property: 'selection', _ref: 'channel' }], to: { _enum: 'ordinal', _value: 'none' } }], {})
 }
+async function moveLayerInside (source: Layer, target: Layer) {
+  if (isNewVersionPS) {
+    source.move(target, constants.ElementPlacement.PLACEINSIDE)
+    return
+  }
+  setActiveLayer(target)
+  await batchPlay([{ _obj: 'make', _target: [{ _ref: 'layer' }], using: { _obj: 'layer', name: '$Temp Layer$' } }], {})
+  const tmp = target.layers!.getByName('$Temp Layer$')
+  source.move(tmp, constants.ElementPlacement.PLACEBEFORE)
+  tmp.delete()
+}
 
 function deleteLayer (layer: Layer) {
   layer.layers?.forEach(deleteLayer)
@@ -175,7 +186,7 @@ const optionsMap: Record<keyof GlowOptions, string> = {
   glowType: 'g',
   colorize: 'c',
   hue: 'h',
-  saturation: 's',
+  saturation: 'S',
   lightness: 'l',
   brightness: 'b',
   times: 'T',
@@ -296,7 +307,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   delete (params as any).isEdit
   localStorage.setItem('options', JSON.stringify(toShortOptions(params)))
   const brightnessLevel = 254 - brightness
-  app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
+  if (app.preferences) app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
   const docWidth = doc.width
   const docHeight = doc.height
   const docResolution = doc.resolution
@@ -326,7 +337,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
     bloomsProGlow = (await doc.createLayerGroup({ name: glowParametersName }))!
     bloomsProGlow.move(bloomsProGrp, constants.ElementPlacement.PLACEAFTER)
-    outherGlow = (await tmpLayer.duplicate(bloomsProGlow, constants.ElementPlacement.PLACEINSIDE))!
+    outherGlow = (await tmpLayer.duplicate())!
+    await moveLayerInside(outherGlow, bloomsProGlow)
     luminosityMask = (await outherGlow.duplicate(outherGlow, constants.ElementPlacement.PLACEBEFORE))!
     await blackAndWhite(luminosityMask)
     await createSnapshot('BloomsPro_Init')
@@ -344,7 +356,8 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     bloomsProGrp = (await doc.createLayerGroup({ name: 'BloomsPro_Grp' }))!
     bloomsProGlow = (await doc.createLayerGroup({ name: glowParametersName }))!
     bloomsProGlow.move(bloomsProGrp, constants.ElementPlacement.PLACEAFTER)
-    outherGlow = (await tmpLayer.duplicate(bloomsProGlow, constants.ElementPlacement.PLACEINSIDE))!
+    outherGlow = (await tmpLayer.duplicate())!
+    await moveLayerInside(outherGlow, bloomsProGlow)
     luminosityMask = (await outherGlow.duplicate(outherGlow, constants.ElementPlacement.PLACEBEFORE))!
     await blackAndWhite(luminosityMask)
   } else {
@@ -431,7 +444,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
   setActiveLayer(bloomsProGlow)
   await batchPlay([{ _obj: 'mergeLayersNew' }], {})
   bloomsProGlow.blendMode = glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
-  doc.layers.getByName(glowParametersName).move(bloomsProGrp, constants.ElementPlacement.PLACEINSIDE)
+  await moveLayerInside(doc.layers.getByName(glowParametersName), bloomsProGrp)
   rangeLayer.move(bloomsProGlow, constants.ElementPlacement.PLACEBEFORE)
   rangeLayer.visible = false
   if ((intensity > 0) && (brightness > 0)) {
@@ -458,9 +471,9 @@ function createSnapshot (name: string) {
 }
 async function optimizeBloomsPro () {
   const scaleFactor = 1500
-  const rulerUnits = app.preferences.unitsAndRulers.rulerUnits
-  if (rulerUnits !== constants.RulerUnits.PIXELS) {
-    app.preferences.unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
+  if (app.preferences) {
+    const { unitsAndRulers } = app.preferences
+    if (unitsAndRulers.rulerUnits !== constants.RulerUnits.PIXELS) unitsAndRulers.rulerUnits = constants.RulerUnits.PIXELS
   }
   const docHeight = app.activeDocument.height
   const docWidth = app.activeDocument.width
@@ -537,7 +550,8 @@ async function generateBloomsProElement () {
   let i = 1
   let name: string
   while (map[(name = 'BloomsPro_Element - Glow - ' + i)]) i++
-  const bloomsProElement = (await app.activeDocument.activeLayers.add())!
+  const bloomsProElement = (await app.activeDocument.createLayer())!
+  bloomsProElement.selected = true
   bloomsProElement.name = name
   hideElements()
   await applyImage()
@@ -546,7 +560,7 @@ async function generateBloomsProElement () {
   if (app.activeDocument.mode !== constants.DocumentMode.RGB) {
     await app.activeDocument.changeMode(constants.ChangeMode.RGB)
   }
-  // await app.activeDocument.suspendHistory(() => changeDocumentSize(), 'BloomsPro - Initialize')
+  // await suspendHistory(() => changeDocumentSize(), 'BloomsPro - Initialize')
   convertBits()
   return name
 }
@@ -555,71 +569,53 @@ export const getGroup = () => app.activeDocument.layers.find(it => it.name === '
 export const getRangeLayer = () => getGroup()?.layers?.find(it => it.name === 'BloomsPro_Range')
 
 export async function apply (enableMask = false, isCancel = false) {
-  let error: Error | undefined
   const options = getCurrentOptions()
   if (!options) return
-  await app.activeDocument.suspendHistory(async () => {
-    try {
-      if (isCancel) {
-        await app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES)
-        if (!options.isEdit) app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && it.delete())
-      } else {
-        await batchPlay([{ _obj: 'select', _target: [{ _ref: 'snapshotClass', _name: 'BloomsPro_HQ' }] }], {})
-        await generateGlow(options, true)
-        app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.EIGHT
-        app.activeDocument.layers.getByName('BloomsPro_SourceLayer').visible = false
-        app.activeDocument.layers[0]!.layers![0].visible = false
-        await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
-        for (const it of app.activeDocument.layers) {
-          if (it.name !== options.layerName || it.kind !== constants.LayerKind.SMARTOBJECT) return
-          it.blendMode = options.glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
-          if (!enableMask) continue
-          setActiveLayer(it)
-          await batchPlay([{ _obj: 'make', at: { _enum: 'channel', _ref: 'channel', _value: 'mask' }, new: { _class: 'channel' }, using: { _enum: 'userMaskEnabled', _value: 'hideAll' } }], {})
-        }
-        if (enableMask) {
-          await batchPlay([
-            { _obj: 'select', _target: [{ _ref: 'paintbrushTool' }] },
-            { _obj: 'reset', _target: [{ _property: 'colors', _ref: 'color' }] }
-          ])
-        }
+  await suspendHistory(async () => {
+    if (isCancel) {
+      await app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES)
+      if (!options.isEdit) app.activeDocument.layers.forEach(it => it.name === options.layerName && it.kind === constants.LayerKind.SMARTOBJECT && it.delete())
+    } else {
+      await batchPlay([{ _obj: 'select', _target: [{ _ref: 'snapshotClass', _name: 'BloomsPro_HQ' }] }], {})
+      await generateGlow(options, true)
+      app.activeDocument.bitsPerChannel = constants.BitsPerChannelType.EIGHT
+      app.activeDocument.layers.getByName('BloomsPro_SourceLayer').visible = false
+      app.activeDocument.layers[0]!.layers![0].visible = false
+      await app.activeDocument.close(constants.SaveOptions.SAVECHANGES)
+      for (const it of app.activeDocument.layers) {
+        if (it.name !== options.layerName || it.kind !== constants.LayerKind.SMARTOBJECT) return
+        it.blendMode = options.glowType === 'bloom-soft' ? constants.BlendMode.SOFTLIGHT : constants.BlendMode.SCREEN
+        if (!enableMask) continue
+        setActiveLayer(it)
+        await batchPlay([{ _obj: 'make', at: { _enum: 'channel', _ref: 'channel', _value: 'mask' }, new: { _class: 'channel' }, using: { _enum: 'userMaskEnabled', _value: 'hideAll' } }], {})
       }
-      // if (!isDarwin) await togglePalettes()
-    } catch (e) {
-      error = e as any
+      if (enableMask) {
+        await batchPlay([
+          { _obj: 'select', _target: [{ _ref: 'paintbrushTool' }] },
+          { _obj: 'reset', _target: [{ _property: 'colors', _ref: 'color' }] }
+        ])
+      }
     }
+    // if (!isDarwin) await togglePalettes()
   }, 'BloomsPro - ' + lang.apply)
   // if (!isDarwin) setTimeout(setFullScreenMode, 50, false)
-  if (error) throw error
 }
 
 export async function generate (options?: GlowOptions) {
-  let error: Error | null = null
   // if (!isDarwin) {
   //   await core.executeAsModal(togglePalettes, { commandName: 'Toggle Palettes' })
   //   await setFullScreenMode(true)
   // }
   let layerName: string
-  await app.activeDocument.suspendHistory(async () => {
-    try {
-      await setPerformanceMode()
-      layerName = await generateBloomsProElement()
-      await fitToScreen()
-    } catch (e: any) {
-      console.error(e)
-      error = e
-    }
+  await suspendHistory(async () => {
+    await setPerformanceMode()
+    layerName = await generateBloomsProElement()
+    await fitToScreen()
   }, 'BloomsPro - ' + lang.histories.init)
-  if (error) return error
-  await app.activeDocument.suspendHistory(async () => {
-    try {
-      await generateGlow({ ...(options || {}), layerName })
-      await focusPluginPanel()
-    } catch (e: any) {
-      error = e
-    }
+  await suspendHistory(async () => {
+    await generateGlow({ ...(options || {}), layerName })
+    await focusPluginPanel()
   }, 'BloomsPro - ' + lang.histories.generate)
-  return error
 }
 
 export async function editElement (layerName: string) {
@@ -629,15 +625,10 @@ export async function editElement (layerName: string) {
   //   await setFullScreenMode(true)
   // }
 
-  await app.activeDocument.suspendHistory(async () => {
-    try {
-      await setPerformanceMode()
-      await openElement(layerName)
-      await fitToScreen()
-    } catch (e: any) {
-      console.error(e)
-      error = e
-    }
+  await suspendHistory(async () => {
+    await setPerformanceMode()
+    await openElement(layerName)
+    await fitToScreen()
   }, 'BloomsPro - ' + lang.edit)
 
   await core.executeAsModal(async () => {
@@ -659,16 +650,4 @@ export const getCurrentOptions = () => {
   return null
 }
 
-export const regenerate = async (options?: GlowOptions) => {
-  let error: Error | undefined
-  // await core.executeAsModal(async () => {
-  await app.activeDocument.suspendHistory(async () => {
-    try {
-      await generateGlow(options)
-    } catch (e: any) {
-      error = e
-    }
-  // }, { commandName: 'BloomsPro - Regenerate' })
-  }, 'BloomsPro - ' + lang.histories.generate)
-  if (error) throw error
-}
+export const regenerate = (options?: GlowOptions) => suspendHistory(() => generateGlow(options), 'BloomsPro - ' + lang.histories.generate)
