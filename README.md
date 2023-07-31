@@ -4,7 +4,7 @@ Easily create glow effects in Photoshop.
 
 在 PS 中轻松创建泛光与柔焦效果
 
-![Screenshot](screenshots/home.png)
+![Screenshot](screenshots/home.jpg)
 
 ![Sample](screenshots/sample.jpg)
 
