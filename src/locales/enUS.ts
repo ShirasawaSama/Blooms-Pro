@@ -13,6 +13,7 @@ export default {
     rayCount: 'Ray Count'
   },
   author: '',
+  reset: 'Reset Options',
   colorize: 'Colorize',
   showRange: 'Show Range',
   sameBlur: 'Same Blur',

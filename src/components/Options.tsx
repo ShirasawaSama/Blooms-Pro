@@ -36,7 +36,7 @@ const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
     error(e.message)
   }).finally(refresh)
 
-  async function regenerate (options: GlowOptions) {
+  async function regenerate (options?: GlowOptions) {
     const oldTime = Date.now()
     try {
       try {
@@ -201,6 +201,7 @@ const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         >{lang.showRange}
         </Checkbox>
       </div>
+      <sp-label id='reset'><a href='#' onClick={() => regenerate()}>{lang.reset}</a></sp-label>
     </div>
   )
 }

@@ -15,6 +15,7 @@ const lang: typeof langType = {
     rayCount: '光线数量'
   },
   author: '白泽',
+  reset: '重置默认参数',
   colorize: '光着色',
   showRange: '显示采样范围',
   sameBlur: '每层模糊都相同',

@@ -659,7 +659,7 @@ export const getCurrentOptions = () => {
   return null
 }
 
-export const regenerate = async (options: GlowOptions) => {
+export const regenerate = async (options?: GlowOptions) => {
   let error: Error | undefined
   // await core.executeAsModal(async () => {
   await app.activeDocument.suspendHistory(async () => {
