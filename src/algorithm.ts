@@ -170,7 +170,7 @@ export interface GlowOptions {
   lightness: number
   brightness: number
   times: number
-  detail: number
+  postBlur: number
   chromaticAberration: number
   layerName: string
   sameBlur: boolean
@@ -190,7 +190,7 @@ const optionsMap: Record<keyof GlowOptions, string> = {
   lightness: 'l',
   brightness: 'b',
   times: 'T',
-  detail: 'd',
+  postBlur: 'p',
   chromaticAberration: 'C',
   layerName: 'L',
   sameBlur: 'B',
@@ -213,12 +213,12 @@ export const toFullOptions = (o: Record<string, string>) => {
 }
 
 export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow = false) {
-  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, detail, chromaticAberration, layerName, sameBlur, linearBlur, skipSkin, isEdit } = Object.assign({
+  let { intensity, size, threshold, angle, glowType, colorize, hue, saturation, lightness, brightness, times, postBlur, chromaticAberration, layerName, sameBlur, linearBlur, skipSkin, isEdit } = Object.assign({
     angle: 0,
     brightness: 0,
     chromaticAberration: 0,
     colorize: false,
-    detail: 0,
+    postBlur: 0,
     glowType: 'bloom',
     hue: 0,
     intensity: 100,
@@ -234,13 +234,13 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     isEdit: false
   }, options || {})
   async function blurGlare (layer: Layer) {
-    if (detail > 0) {
+    if (postBlur > 0) {
       if (appliedGlow) {
         if (docWidth > docHeight) await doc.resizeImage(1500, undefined, docResolution, constants.ResampleMethod.BILINEAR, 0)
         else await doc.resizeImage(undefined, 1200, docResolution, constants.ResampleMethod.BILINEAR, 0)
       }
       setActiveLayer(layer)
-      await batchPlay([{ _obj: 'ripple', amount: (detail * 10) - 1, rippleSize: { _enum: 'rippleSize', _value: 'large' } }], {})
+      await batchPlay([{ _obj: 'ripple', amount: (postBlur * 10) - 1, rippleSize: { _enum: 'rippleSize', _value: 'large' } }], {})
       if (appliedGlow) await doc.resizeImage(docWidth, docHeight, docResolution, constants.ResampleMethod.BILINEAR, 0)
       docH = doc.height
       docW = doc.width
@@ -248,22 +248,19 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
       scale = docSize / 400
       scale2 = docSize / 12000
     }
-    let secondGlare: Layer | undefined
-    let secondGlareAngle = 0
-    if (times === 4) {
-      secondGlare = (await layer.duplicate())!
-      secondGlare.fillOpacity = intensity
-      secondGlareAngle = angle + 90
-      secondGlareAngle = secondGlareAngle > 90 ? -(-180 + secondGlareAngle) : -(90 + angle)
+    const layers = [layer]
+    for (let i = 1; i < times; i++) {
+      const l = (await layer.duplicate())!
+      l.fillOpacity = intensity
+      layers.push(l)
     }
-    const motionBlurAmount = 10
-    for (let o = 0; o < motionBlurAmount; o++) {
-      await motionBlur(layer, -angle, size * scale)
-      if (times === 4) {
-        await motionBlur(secondGlare!, secondGlareAngle, size * scale)
-        if (brightnessLevel > 0) await levels(secondGlare!, 200 + (brightnessLevel * 0.21568627450980393))
+    const angleStep = 180 / times
+    for (let i = 0; i < times; i++) {
+      for (let j = 0; j < 10; j++) {
+        const a = -angle + angleStep * i
+        await motionBlur(layers[i], a > 90 ? a - 180 : a, size * scale)
+        if (brightnessLevel > 0) await levels(layers[i], 200 + (brightnessLevel * 0.21568627450980393))
       }
-      if (brightnessLevel > 0) await levels(layer, 200 + (brightnessLevel * 0.21568627450980393))
     }
   }
 
@@ -287,7 +284,7 @@ export async function generateGlow (options?: Partial<GlowOptions>, appliedGlow 
     brightness: brightness | 0,
     chromaticAberration: chromaticAberration | 0,
     colorize,
-    detail: detail | 0,
+    postBlur: postBlur | 0,
     glowType,
     hue: hue | 0,
     intensity,

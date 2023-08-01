@@ -18,7 +18,7 @@ Easily create glow effects in Photoshop.
 - Colorize support - 支持光着色
 - Skin color protection - 支持保护肤色
 - Faster than other similar plugins - 比其他同类插件更快 (Mac M1: 0.5s vs 1.5s)
-- More options - 更多选项 (e.g. 模糊层数、线性模糊、色散等)
+- More options - 更多选项 (e.g. 模糊层数、光线数量、线性模糊、色散等)
 
 ## Usage - 如何安装
 

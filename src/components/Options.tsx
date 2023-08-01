@@ -7,8 +7,7 @@ import { app, core } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
 import { getCurrentOptions, regenerate as _regenerate, GlowOptions, apply as _apply, getRangeLayer, getGroup } from '../algorithm'
 
-const glareTimes = [2, 4]
-const bloomTimes = [1, 2, 3, 4, 5, 6, 7, 8]
+const bloomTimes = Array.from({ length: 8 }, (_, i) => <sp-menu-item key={i}>{i + 1}</sp-menu-item>)
 
 const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
   const [time, setTime] = React.useContext(TimeCostContext)
@@ -71,10 +70,10 @@ const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
           label={options.glowType === 'glare' ? lang.glare.rayCount : lang.blurTimes}
           size='S'
           class='ray-number'
-          value={options.glowType === 'glare' ? +(options.times === 4) : options.times - 1}
-          onChange={val => regenerate({ ...options, times: options.glowType === 'glare' ? (val ? 4 : 2) : val + 1 })}
+          value={options.times - 1}
+          onChange={val => regenerate({ ...options, times: val + 1 })}
         >
-          {(options.glowType === 'glare' ? glareTimes : bloomTimes).map(i => <sp-menu-item key={i}>{i}</sp-menu-item>)}
+          {bloomTimes}
         </Picker>
       </div>
       <sp-divider />
@@ -120,10 +119,10 @@ const Options: React.FC<{ refresh: () => void }> = ({ refresh }) => {
             onChange={val => regenerate({ ...options, angle: val })}
           />
           <Slider
-            value={options.detail}
+            value={options.postBlur}
             value-label='%'
             label={lang.glare.postBlur}
-            onChange={val => regenerate({ ...options, detail: val })}
+            onChange={val => regenerate({ ...options, postBlur: val })}
           />
         </>
       )}
