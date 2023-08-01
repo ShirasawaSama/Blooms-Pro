@@ -31,6 +31,7 @@ export default {
   second: 's',
   enableMask: 'Enable Mask',
   originalImage: 'Original Image',
+  sponsor: 'This plugin is free, click here to sponsor the author',
   histories: {
     init: 'Init',
     generate: 'Generate'

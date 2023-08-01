@@ -11,7 +11,7 @@
     "copy": "cpy README.md LICENSE dist/",
     "replace": "node -e \"const fs = require('fs'); fs.writeFileSync('dist/index.html', fs.readFileSync('dist/index.html', 'utf-8').replace(' type=\\\"module\\\"', ''))\"",
     "zip": "mv dist Shirasawa.BloomsPro && zip -r Shirasawa.BloomsPro.zip Shirasawa.BloomsPro",
-    "replace:old": "node -e \"const fs = require('fs'); fs.writeFileSync('Shirasawa.BloomsPro/manifest.json', fs.readFileSync('Shirasawa.BloomsPro/manifest.json', 'utf-8').replace('{ \\\"schemes\\\": [\\\"https\\\"] }', '\\\"request\\\"'))\"",
+    "replace:old": "node -e \"const fs = require('fs'); fs.writeFileSync('Shirasawa.BloomsPro/manifest.json', fs.readFileSync('Shirasawa.BloomsPro/manifest.json', 'utf-8').replace('{ \\\"schemes\\\": [\\\"http\\\", \\\"https\\\"] }', '\\\"request\\\"'))\"",
     "zip:old": "npm run replace:old && mv Shirasawa.BloomsPro Shirasawa.BloomsPro.PS2022 && zip -r Shirasawa.BloomsPro.PS2022.zip Shirasawa.BloomsPro.PS2022"
   },
   "repository": {

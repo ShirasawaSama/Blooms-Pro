@@ -1,4 +1,6 @@
 import React from 'react'
+// @ts-ignore
+import uxp from 'uxp'
 import { app } from 'photoshop'
 import { error, TimeCostContext } from '../utils'
 import { generate, editElement, toFullOptions } from '../algorithm'
@@ -46,6 +48,13 @@ const Home: React.FC<{ refresh: () => void }> = ({ refresh }) => {
         onClick={(e: any) => localStorage.setItem('enableMask', e.target.checked.toString())}
       >{lang.enableMask}
       </sp-checkbox>
+      <sp-label class='sponsor'>
+        <a
+          href='http://blooms-pro.neko-craft.com/'
+          onClick={() => console.log(uxp.shell.openExternal('http://blooms-pro.neko-craft.com/', lang.sponsor))}
+        >{lang.sponsor}
+        </a>
+      </sp-label>
     </div>
   )
 }

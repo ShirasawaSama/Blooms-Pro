@@ -12,7 +12,7 @@ declare global {
       'sp-menu': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>
       'sp-menu-item': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> & { disabled?: boolean }
       'sp-menu-divider': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>
-      'sp-label': React.DetailedHTMLProps<React.HTMLAttributes<HTMLLabelElement>, HTMLLabelElement>
+      'sp-label': React.DetailedHTMLProps<React.HTMLAttributes<HTMLLabelElement>, HTMLLabelElement> & { class?: string }
       'sp-divider': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> & { size?: string }
       'sp-slider': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> & { value?: number, min?: number, max?: number, step?: number, size?: string, variant?: string }
       'sp-detail': React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> & { size?: string }

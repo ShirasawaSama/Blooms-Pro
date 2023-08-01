@@ -33,6 +33,7 @@ const lang: typeof langType = {
   second: '秒',
   enableMask: '启用蒙版',
   originalImage: '原始图像',
+  sponsor: '本插件为免费插件, 点此赞助作者',
   histories: {
     init: '初始化',
     generate: '生成'
