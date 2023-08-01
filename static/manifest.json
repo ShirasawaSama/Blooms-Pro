@@ -8,9 +8,7 @@
     "minVersion": "23.0.0"
   },
   "requiredPermissions": {
-    "launchProcess": {    
-      "schemes": ["https"]
-    },
+    "launchProcess": { "schemes": ["https"] },
     "localFileSystem": "fullAccess",
     "network": {
       "domains": ["https://github.com"]

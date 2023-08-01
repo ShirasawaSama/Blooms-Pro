@@ -23,14 +23,18 @@ Easily create glow effects in Photoshop.
 
 ### Method 1: One Click Installer - 方法一: 安装包 **(需要正版 PS)**
 
-1. Download the [shirasawa.BloomsPro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Bshirasawa.BloomsPro.ccx) file - 下载 [shirasawa.BloomsPro](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/shirasawa.BloomsPro.ccx)
+1. Download the [Shirasawa.BloomsPro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Shirasawa.BloomsPro.ccx) file - 下载 [Shirasawa.BloomsPro.ccx](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Shirasawa.BloomsPro.ccx)
 2. Just run the ccx file. - 双击运行即可
 
 ### Method 2: Unzip - 方法二: 手动解压
 
-1. Download the [shirasawa.BloomsPro.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/shirasawa.BloomsPro.zip) file - 下载 [shirasawa.BloomsPro.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/shirasawa.BloomsPro.zip)
+1. Download the [Shirasawa.BloomsPro.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Shirasawa.BloomsPro.zip) file - 下载 [Shirasawa.BloomsPro.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Shirasawa.BloomsPro.zip)
 2. Unzip the zip file - 将下载到的 zip 文件直接解压为一个文件夹
 3. Move the unzipped folder to the Photoshop `Plug-ins` folder - 把解压到的整个文件夹直接复制到 PS 安装目录下的 `Plug-ins` 文件夹中并重启 PS
+
+> For **PS2022**, please download the [Shirasawa.BloomsPro.PS2022.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Shirasawa.BloomsPro.PS2022.zip)
+>
+> 对于 **PS2022** 版本, 请下载 [Shirasawa.BloomsPro.PS2022.zip](https://github.com/ShirasawaSama/Blooms-Pro/releases/latest/download/Shirasawa.BloomsPro.PS2022.zip)
 
 ## Author
 
