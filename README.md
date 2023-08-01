@@ -10,6 +10,7 @@ Easily create glow effects in Photoshop.
 
 ## Features - 特性
 
+- Support Photoshop 2022+ - 支持 Photoshop 2022 及以上版本
 - Mac M1 support - 原生支持 Mac M1 芯片
 - Free and open source - 免费开源
 - Multi-Language support - 多语言支持
